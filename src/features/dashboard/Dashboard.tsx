@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowUpRight, Cpu, Download, Flame, MemoryStick, Network, Play, Plus, Server, Square, Users } from 'lucide-react';
 import { api, errMsg } from '@/lib/ipc';
@@ -14,11 +14,15 @@ import { confirm } from '@/components/ui/Dialog';
 import { Card, StatusPill } from '@/components/ui/Surface';
 import { ServerControls } from '@/features/server/ServerControls';
 
-function ServerCard({ inst, i }: { inst: ServerInstance; i: number }) {
+const ServerCard = memo(function ServerCard({ inst, i }: { inst: ServerInstance; i: number }) {
   const st = useApp((s) => s.statuses[inst.id]);
   const openServer = useApp((s) => s.openServer);
   const hist = useServerHistory(inst.id);
-  const win = hist.slice(-90);
+  const win = useMemo(() => hist.slice(-90), [hist]);
+  const cpu = useMemo(() => {
+    const vals = win.map((p) => p.cpu);
+    return { vals, max: Math.max(10, ...vals) * 1.2 };
+  }, [win]);
   const last = hist[hist.length - 1];
   const live = st?.state === 'running' || st?.state === 'starting';
   return (
@@ -52,7 +56,7 @@ function ServerCard({ inst, i }: { inst: ServerInstance; i: number }) {
               <div className="font-mono text-[14px] text-fg">{live ? `${st?.players.length ?? 0}/${inst.launch.maxPlayers}` : '—'}</div>
             </div>
           </div>
-          <Sparkline className="mt-3" height={36} values={win.map((p) => p.cpu)} max={Math.max(10, ...win.map((p) => p.cpu)) * 1.2} color={serverColor(inst.color)} />
+          <Sparkline className="mt-3" height={36} values={cpu.vals} max={cpu.max} color={serverColor(inst.color)} />
         </button>
         <div className="flex items-center justify-between border-t border-line bg-bg-raised/50 px-4 py-2.5">
           <span className="text-[11.5px] text-fg-4">
@@ -63,19 +67,20 @@ function ServerCard({ inst, i }: { inst: ServerInstance; i: number }) {
       </Card>
     </motion.div>
   );
-}
+});
 
 function SystemStrip() {
   const sys = useSystemHistory();
   const info = useApp((s) => s.info);
-  const win = sys.slice(-90);
+  const win = useMemo(() => sys.slice(-90), [sys]);
   const last = sys[sys.length - 1];
-  const tiles = [
+  const tiles = useMemo(() => [
     { label: 'CPU', icon: Cpu, value: last ? pct(last.cpu) : '—', sub: `${info?.cores ?? '?'} logical cores`, values: win.map((p) => p.cpu), max: 100 },
     { label: 'Memory', icon: MemoryStick, value: last ? bytes(last.memUsed) : '—', sub: last ? `of ${bytes(last.memTotal)}` : '', values: win.map((p) => p.memUsed), fit: true },
     { label: 'Network in', icon: Network, value: last ? `${bytes(last.rxBps)}/s` : '—', sub: 'whole PC', values: win.map((p) => p.rxBps), color: SERIES[1] },
     { label: 'Network out', icon: Network, value: last ? `${bytes(last.txBps)}/s` : '—', sub: 'whole PC', values: win.map((p) => p.txBps), color: SERIES[0] },
-  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [win, last, info]);
   return (
     <div className="grid grid-cols-4 gap-4">
       {tiles.map((t) => (

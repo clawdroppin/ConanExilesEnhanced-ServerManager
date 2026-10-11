@@ -3,6 +3,7 @@ import { Crown, Gamepad2, Globe2, IdCard, Network, Palette, Wand2 } from 'lucide
 import { cn } from '@/lib/cn';
 import { api } from '@/lib/ipc';
 import { BEACON_OFFSET, beaconPort, netInfo } from '@/lib/net';
+import { useMaps } from '@/lib/useMaps';
 import { SERVER_COLORS } from '@/lib/colors';
 import type { NetInfo, PlatformPolicy } from '@/lib/types';
 import { useApp } from '@/store/app';
@@ -37,15 +38,19 @@ export function Settings({ id }: { id: string }) {
   const instances = useApp((s) => s.instances);
   const setView = useApp((s) => s.setView);
   const [net, setNet] = useState<NetInfo | null>(null);
+  const maps = useMaps(id);
   useEffect(() => {
     netInfo().then(setNet).catch(() => {});
   }, []);
   if (!draft) return null;
-  const s = draft.ini ?? { ownerId: '', serverName: '', defaultWorldName: '', adminPassword: '', worldPassword: '', platformPolicy: 'Crossplay' as const, allowCrashDumps: true };
+  const s = draft.ini ?? { ownerId: '', serverName: '', defaultWorldName: '', defaultMap: '', adminPassword: '', worldPassword: '', platformPolicy: 'Crossplay' as const, allowCrashDumps: true };
   const l = draft.launch;
   const mine = [l.port, beaconPort(draft), l.queryPort].filter((p) => p > 0);
   const clash = instances.filter((o) => o.id !== id && [o.launch.port, beaconPort(o), o.launch.queryPort].some((p) => p > 0 && mine.includes(p)));
   const ownerErr = ownerIdProblem(s.ownerId);
+  const mapValue = s.defaultMap ?? '';
+  // If the profile holds a map we don't list (e.g. a mod map), keep it selectable.
+  const mapOptions = maps.some((m) => m.value === mapValue) ? maps : [{ value: mapValue, label: 'Custom map', hint: mapValue }, ...maps];
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-5 p-6 pb-24">
@@ -81,6 +86,18 @@ export function Settings({ id }: { id: string }) {
         >
           <Input value={s.defaultWorldName} invalid={!s.defaultWorldName.trim()} onChange={(e) => patch((d) => void (d.ini.defaultWorldName = e.target.value))} />
         </FieldRow>
+        <FieldRow
+          label="Map"
+          description="Which world the server runs (Engine.ini ServerDefaultMap). Each map keeps its own save file, so switching maps starts a fresh world on that map. Applies on the next start."
+        >
+          <Select value={mapValue} onChange={(e) => patch((d) => void (d.ini.defaultMap = e.target.value))}>
+            {mapOptions.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label} — {m.hint}
+              </option>
+            ))}
+          </Select>
+        </FieldRow>
         <FieldRow label="World password" description="Players need it to join. Leave empty for a public world. Overrides any password stored in the world save.">
           <SecretInput value={s.worldPassword} onChange={(v) => patch((d) => void (d.ini.worldPassword = v))} placeholder="Open to everyone" generate />
         </FieldRow>
@@ -100,7 +117,14 @@ export function Settings({ id }: { id: string }) {
         >
           <div className="flex items-center gap-3">
             <Slider value={l.maxPlayers} min={1} max={100} onChange={(v) => patch((d) => void (d.launch.maxPlayers = v))} />
-            <span className="w-8 text-right font-mono text-[13px] text-fg">{l.maxPlayers}</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={l.maxPlayers}
+              onChange={(e) => patch((d) => void (d.launch.maxPlayers = Math.max(1, Math.min(100, Number(e.target.value) || 1))))}
+              className="h-8 w-16 rounded-md border border-line bg-bg px-2 text-center font-mono text-[13px] text-fg focus:border-accent focus:outline-none"
+            />
           </div>
         </FieldRow>
       </Section>

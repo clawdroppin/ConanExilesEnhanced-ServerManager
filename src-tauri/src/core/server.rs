@@ -121,6 +121,20 @@ pub fn sync_ini(inst: &ServerInstance) -> AppResult<Vec<String>> {
     } else {
         e.set("Regions", "ExcludedRegions", &excluded.join(","));
     }
+    // Map selection – `ServerDefaultMap`. Reuse the GameMapsSettings section however the game
+    // spelled it (full `/Script/...` path or a short name); create the documented one if absent.
+    // Empty = leave the game's default map in place (we drop the key so the game falls back).
+    let map = inst.ini.default_map.trim();
+    let maps_section = e
+        .sections()
+        .into_iter()
+        .find(|s| s.to_ascii_lowercase().contains("gamemapssettings"))
+        .unwrap_or_else(|| "/Script/EngineSettings.GameMapsSettings".to_string());
+    if map.is_empty() {
+        e.remove(&maps_section, "ServerDefaultMap");
+    } else {
+        e.set(&maps_section, "ServerDefaultMap", map);
+    }
     ini::write_file(&path, &e.to_text())?;
 
     let path = inst.game_ini();
@@ -180,6 +194,11 @@ pub fn read_ini_into(inst: &mut ServerInstance) {
     }
     if let Some(v) = e.get("Regions", "ExcludedRegions") {
         inst.regions.excluded = v.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect();
+    }
+    if let Some(sec) = e.sections().into_iter().find(|s| s.to_ascii_lowercase().contains("gamemapssettings")) {
+        if let Some(v) = e.get(&sec, "ServerDefaultMap").filter(|v| !v.trim().is_empty()) {
+            inst.ini.default_map = v.trim().to_string();
+        }
     }
     if let Some(p) = e.get("URL", "Port").and_then(|v| v.trim().parse().ok()) {
         inst.launch.port = p;

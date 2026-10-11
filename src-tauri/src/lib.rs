@@ -185,6 +185,8 @@ pub fn run() {
             commands::game_clans,
             commands::game_events,
             commands::world_summary,
+            commands::list_maps,
+            commands::list_maps_in,
             commands::sql_query,
             commands::player_action,
             commands::set_player_note,

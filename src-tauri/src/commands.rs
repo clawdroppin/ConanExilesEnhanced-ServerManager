@@ -1,7 +1,7 @@
 //! Every `#[tauri::command]`. Thin wrappers that delegate to `core::*`; mutating commands write
 //! to the audit log. Add new commands to `lib.rs`, `src/lib/ipc.ts` and `src/lib/devMock.ts`.
 
-use crate::core::{backup, diagnostics, gamedb, history, ini, mods, modsync, network, proc, rcon, secrets, server, settings, steamcmd, supervisor, workshop};
+use crate::core::{backup, diagnostics, gamedb, history, ini, maps, mods, modsync, network, proc, rcon, secrets, server, settings, steamcmd, supervisor, workshop};
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 use crate::state::{manager_log, notify, now_ms, AppState, Folder};
@@ -836,6 +836,24 @@ pub async fn game_events(state: St<'_>, id: String, limit: u32, filter: String) 
 pub async fn world_summary(state: St<'_>, id: String) -> AppResult<gamedb::WorldSummary> {
     let inst = state.instance(&id).await?;
     blocking(move || gamedb::summary(&inst.db_path())).await
+}
+
+/// Discover the maps this install can run by scanning its `Content` folder for `.umap` assets.
+#[tauri::command]
+pub async fn list_maps(state: St<'_>, id: String) -> AppResult<Vec<maps::MapInfo>> {
+    let inst = state.instance(&id).await?;
+    let content = inst.content_dir();
+    blocking(move || Ok(maps::list_maps(&content))).await
+}
+
+/// Discover maps by scanning an install folder directly (create wizard – no instance exists yet).
+/// Accepts the install dir (`…/ConanSandbox/Content`), the project dir, or the Content dir itself.
+#[tauri::command]
+pub async fn list_maps_in(install_dir: String) -> AppResult<Vec<maps::MapInfo>> {
+    let root = PathBuf::from(install_dir);
+    let candidates = [root.join(PROJECT).join("Content"), root.join("Content"), root.clone()];
+    let content = candidates.iter().find(|p| p.is_dir()).cloned().unwrap_or_else(|| candidates[0].clone());
+    blocking(move || Ok(maps::list_maps(&content))).await
 }
 
 #[tauri::command]

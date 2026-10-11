@@ -20,7 +20,7 @@ function ServerItem({ inst, index }: { inst: ServerInstance; index: number }) {
   return (
     <button
       draggable
-      onDragStart={(e) => e.dataTransfer.setData('text/dwsm-server', String(index))}
+      onDragStart={(e) => e.dataTransfer.setData('text/cesm-server', String(index))}
       onDragOver={(e) => {
         e.preventDefault();
         setOver(true);
@@ -28,7 +28,7 @@ function ServerItem({ inst, index }: { inst: ServerInstance; index: number }) {
       onDragLeave={() => setOver(false)}
       onDrop={(e) => {
         setOver(false);
-        const from = +e.dataTransfer.getData('text/dwsm-server');
+        const from = +e.dataTransfer.getData('text/cesm-server');
         if (isNaN(from) || from === index) return;
         const list = [...useApp.getState().instances];
         const [m] = list.splice(from, 1);

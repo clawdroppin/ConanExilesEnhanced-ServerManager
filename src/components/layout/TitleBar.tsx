@@ -7,20 +7,43 @@ import { Kbd } from '@/components/ui/Surface';
 
 function Logo() {
   return (
-    <svg viewBox="0 0 1024 1024" className="size-[18px]">
+    <svg viewBox="0 0 1024 1024" className="size-[18px]" aria-hidden>
       <defs>
-        <linearGradient id="tb-fire" x1="0.5" y1="1" x2="0.5" y2="0">
-          <stop offset="0" stopColor="#ea580c" />
-          <stop offset="0.55" stopColor="#f97316" />
+        <linearGradient id="tb-gold" x1="0.5" y1="1" x2="0.5" y2="0">
+          <stop offset="0" stopColor="#b45309" />
+          <stop offset="0.6" stopColor="#f59e0b" />
           <stop offset="1" stopColor="#fcd34d" />
         </linearGradient>
       </defs>
+      {/* crossed swords behind the shield – blades up, hilts down */}
+      <g strokeLinecap="round">
+        <line x1="330" y1="240" x2="694" y2="604" stroke="#d6d3d1" strokeWidth="44" />
+        <line x1="694" y1="240" x2="330" y2="604" stroke="#d6d3d1" strokeWidth="44" />
+        <line x1="330" y1="240" x2="430" y2="340" stroke="#f5f5f4" strokeWidth="44" />
+        <line x1="694" y1="240" x2="594" y2="340" stroke="#f5f5f4" strokeWidth="44" />
+        <line x1="452" y1="582" x2="694" y2="824" stroke="#92400e" strokeWidth="52" />
+        <line x1="572" y1="582" x2="330" y2="824" stroke="#92400e" strokeWidth="52" />
+        <line x1="420" y1="640" x2="520" y2="540" stroke="url(#tb-gold)" strokeWidth="40" />
+        <line x1="604" y1="640" x2="504" y2="540" stroke="url(#tb-gold)" strokeWidth="40" />
+        <circle cx="706" cy="836" r="34" fill="url(#tb-gold)" />
+        <circle cx="318" cy="836" r="34" fill="url(#tb-gold)" />
+      </g>
+      {/* shield */}
       <path
-        d="M512 150c40 120 170 190 190 340 14 104-36 190-110 232 26-60 18-128-30-178-6 70-46 118-92 140 18-58 4-110-38-152-20 76-78 116-78 196 0 34 10 66 28 92-90-40-148-128-148-230 0-170 160-250 210-330 20 60 6 110-14 150 70-40 104-140 82-260z"
-        fill="url(#tb-fire)"
+        d="M512 268 L706 330 V520 C706 648 622 716 512 776 C402 716 318 648 318 520 V330 Z"
+        fill="#221a12"
+        stroke="url(#tb-gold)"
+        strokeWidth="34"
+        strokeLinejoin="round"
       />
-      <rect x="300" y="770" width="424" height="56" rx="18" fill="#fafaf9" />
-      <rect x="340" y="846" width="344" height="44" rx="16" fill="#fafaf9" opacity="0.6" />
+      {/* the C */}
+      <path
+        d="M596 436 A118 118 0 1 0 596 588"
+        fill="none"
+        stroke="url(#tb-gold)"
+        strokeWidth="56"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

@@ -20,7 +20,7 @@ function makeInstance(id: string, name: string, port: number, color: string, ext
     branch: 'public',
     branchPassword: '',
     identity: { serverName: name.slice(0, 16), serverPassword: '', adminPassword: 'Ember1234', motd: '' },
-    ini: { ownerId: '9f2c4e1ab37d4c0e8a1f5b6c7d8e9f01', serverName: name.slice(0, 16), defaultWorldName: name.replace(/\W/g, '').slice(0, 16), adminPassword: 'Ember1234', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true },
+    ini: { ownerId: '9f2c4e1ab37d4c0e8a1f5b6c7d8e9f01', serverName: name.slice(0, 16), defaultWorldName: name.replace(/\W/g, '').slice(0, 16), defaultMap: '/Game/Maps/ConanSandbox/ConanSandbox', adminPassword: 'Ember1234', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true },
     launch: { port, beaconPort: 0, upnp: false, queryPort: 0, maxPlayers: 16, multihome: '', multihomeHttp: '', showConsole: false, priority: 'normal', affinity: [], options: { '-log': true, '-unattended': true, '-NoCrashDialog': true }, extraArgs: '' },
     rcon: { enabled: false, password: '', port: 0, maxKarma: 0, pollSecs: 5 },
     regions: { excluded: [] },
@@ -403,6 +403,14 @@ export function installDevMock() {
     game_clans: () => [],
     game_events: () => [],
     world_summary: () => ({ players: 0, characters: 0, clans: 0, events: 0, dbVersion: '1.0', serverRuntimeSecs: 0 }),
+    list_maps: () => [
+      { path: '/Game/Maps/ConanSandbox/ConanSandbox', label: 'ConanSandbox' },
+      { path: '/Game/DLC_EXT/DLC_Siptah/Maps/DLC_Isle_of_Siptah', label: 'DLC_Isle_of_Siptah' },
+    ],
+    list_maps_in: () => [
+      { path: '/Game/Maps/ConanSandbox/ConanSandbox', label: 'ConanSandbox' },
+      { path: '/Game/DLC_EXT/DLC_Siptah/Maps/DLC_Isle_of_Siptah', label: 'DLC_Isle_of_Siptah' },
+    ],
     sql_query: () => ({ columns: [], rows: [] }),
     player_action: () => 'ok',
     set_player_note: () => undefined,

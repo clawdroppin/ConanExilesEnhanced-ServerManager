@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownToLine, Copy, Eraser, FileText, FolderOpen, Search, X } from 'lucide-react';
+import { ArrowDownToLine, Copy, Eraser, FileText, FolderOpen, Search, Send, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { api, errMsg } from '@/lib/ipc';
 import { bytes, clock, dateTime } from '@/lib/format';
-import { clearLines, lineLevel, seedLines, useLogLines, type LogLine } from '@/lib/live';
+import { clearLines, lineLevel, pushLines, seedLines, useLogLines, type LogLine } from '@/lib/live';
 import { copy, reveal } from '@/lib/shell';
 import type { LogFile } from '@/lib/types';
-import { useApp, useInstance } from '@/store/app';
+import { useApp, useInstance, useStatus } from '@/store/app';
 import { IconButton } from '@/components/ui/Button';
 import { Input, Segmented, Select } from '@/components/ui/Field';
 
@@ -54,7 +54,7 @@ function VirtualLines({ lines, follow, onUserScroll, query }: { lines: LogLine[]
               style={{ top: (start + i) * ROW, height: ROW, lineHeight: `${ROW}px` }}
             >
               <span className="w-[62px] shrink-0 text-fg-4/80">{clock(l.ts)}</span>
-              <span className="w-[54px] shrink-0 text-fg-4/70">{l.source === 'server' ? 'server' : l.source === 'manager' ? 'manager' : 'steam'}</span>
+              <span className="w-[54px] shrink-0 text-fg-4/70">{l.source === 'server' ? 'server' : l.source === 'manager' ? 'manager' : l.source === 'rcon' ? 'rcon' : 'steam'}</span>
               <span>
                 {idx >= 0 ? (
                   <>
@@ -76,6 +76,7 @@ function VirtualLines({ lines, follow, onUserScroll, query }: { lines: LogLine[]
 
 export function Console({ id }: { id: string }) {
   const inst = useInstance(id)!;
+  const st = useStatus(id);
   const live = useLogLines(id);
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<Level>('all');
@@ -83,6 +84,10 @@ export function Console({ id }: { id: string }) {
   const [follow, setFollow] = useState(true);
   const [files, setFiles] = useState<LogFile[]>([]);
   const [fileView, setFileView] = useState<{ name: string; lines: LogLine[] } | null>(null);
+  const [cmd, setCmd] = useState('');
+  const [cmdBusy, setCmdBusy] = useState(false);
+  const [cmdHistory, setCmdHistory] = useState<string[]>([]);
+  const [cmdHistIdx, setCmdHistIdx] = useState(-1);
   const toast = useApp((s) => s.toast);
 
   useEffect(() => {
@@ -196,6 +201,73 @@ export function Console({ id }: { id: string }) {
       ) : (
         <VirtualLines lines={filtered} follow={follow} onUserScroll={(b) => b !== follow && !fileView && setFollow(b)} query={query} />
       )}
+      {/* RCON command input */}
+      <div className="flex shrink-0 items-center gap-2 border-t border-line bg-panel/40 px-4 py-2">
+        <span className="font-mono text-[12px] text-accent select-none">&gt;</span>
+        <input
+          value={cmd}
+          onChange={(e) => setCmd(e.target.value)}
+          onKeyDown={async (e) => {
+            if (e.key === 'Enter' && cmd.trim() && !cmdBusy) {
+              e.preventDefault();
+              const c = cmd.trim();
+              setCmd('');
+              setCmdBusy(true);
+              setCmdHistory((h) => [c, ...h].slice(0, 50));
+              setCmdHistIdx(-1);
+              pushLines(id, 'manager', [`> ${c}`], Date.now());
+              try {
+                const resp = await api.rcon(id, c);
+                const respLines = resp.split(/\r?\n/).filter(Boolean);
+                pushLines(id, 'rcon', respLines.length ? respLines : ['(no output)'], Date.now());
+              } catch (err) {
+                pushLines(id, 'rcon', [errMsg(err)], Date.now());
+              } finally {
+                setCmdBusy(false);
+              }
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              if (cmdHistory.length === 0) return;
+              const idx = cmdHistIdx < 0 ? 0 : Math.min(cmdHistIdx + 1, cmdHistory.length - 1);
+              setCmdHistIdx(idx);
+              setCmd(cmdHistory[idx]);
+            } else if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              if (cmdHistIdx < 0) return;
+              const idx = cmdHistIdx - 1;
+              if (idx < 0) { setCmdHistIdx(-1); setCmd(''); }
+              else { setCmdHistIdx(idx); setCmd(cmdHistory[idx]); }
+            }
+          }}
+          placeholder={st?.state === 'running' ? 'Type a console command and press Enter…' : 'Server must be running to send commands'}
+          disabled={cmdBusy}
+          className="h-8 flex-1 rounded-md border border-line bg-bg/80 px-3 font-mono text-[12px] text-fg placeholder:text-fg-4 focus:border-accent focus:outline-none"
+        />
+        <button
+          onClick={async () => {
+            if (!cmd.trim() || cmdBusy) return;
+            const c = cmd.trim();
+            setCmd('');
+            setCmdBusy(true);
+            setCmdHistory((h) => [c, ...h].slice(0, 50));
+            setCmdHistIdx(-1);
+            pushLines(id, 'manager', [`> ${c}`], Date.now());
+            try {
+              const resp = await api.rcon(id, c);
+              const respLines = resp.split(/\r?\n/).filter(Boolean);
+              pushLines(id, 'rcon', respLines.length ? respLines : ['(no output)'], Date.now());
+            } catch (err) {
+              pushLines(id, 'rcon', [errMsg(err)], Date.now());
+            } finally {
+              setCmdBusy(false);
+            }
+          }}
+          disabled={!cmd.trim() || cmdBusy}
+          className="flex h-8 items-center gap-1.5 rounded-md bg-accent px-3 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          <Send className="size-3.5" /> Send
+        </button>
+      </div>
       <div className="flex shrink-0 items-center gap-4 border-t border-line px-4 py-1.5 font-mono text-[10.5px] text-fg-4">
         <span>{filtered.length.toLocaleString()} / {base.length.toLocaleString()} lines</span>
         <span>{inst.installDir}\ConanSandbox\Saved\Logs\ConanSandbox.log</span>

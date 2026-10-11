@@ -155,6 +155,8 @@ export interface DedicatedSettings {
   ownerId: string;
   serverName: string;
   defaultWorldName: string;
+  /** Map the server runs (Engine.ini `ServerDefaultMap`). Empty = the game's default map. */
+  defaultMap: string;
   adminPassword: string;
   worldPassword: string;
   platformPolicy: string;
@@ -620,6 +622,14 @@ export interface WorldSummary {
   thrallsAndPets: number;
   dbVersion: string;
   serverRuntimeSecs: number;
+}
+
+/** A map discovered by scanning the installed game's `Content` folder for `.umap` assets. */
+export interface MapInfo {
+  /** Internal map path for `ServerDefaultMap` (e.g. `/Game/Maps/ConanSandbox/ConanSandbox`). */
+  path: string;
+  /** Human-friendly name derived from the asset file name. */
+  label: string;
 }
 
 export interface SqlTable {

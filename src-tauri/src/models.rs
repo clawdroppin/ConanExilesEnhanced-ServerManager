@@ -109,6 +109,8 @@ pub struct DedicatedSettings {
     pub server_name: String,
     /// Name of the world created on first start.
     pub default_world_name: String,
+    /// Map the server runs (Engine.ini `ServerDefaultMap`). Empty = the game's default map.
+    pub default_map: String,
     /// In-game admin password (MakeMeAdmin).
     pub admin_password: String,
     /// Join password (empty = public).
@@ -125,6 +127,7 @@ impl Default for DedicatedSettings {
             owner_id: String::new(),
             server_name: String::new(),
             default_world_name: "MyWorld".into(),
+            default_map: String::new(),
             admin_password: String::new(),
             world_password: String::new(),
             platform_policy: "Crossplay".into(),
@@ -484,6 +487,10 @@ impl ServerInstance {
 
     pub fn project_dir(&self) -> PathBuf {
         self.install_dir.join(PROJECT)
+    }
+    /// The game's `Content` folder – where `.umap` map assets live (`Content/Maps/…`, `Content/DLC_EXT/…/Maps/…`).
+    pub fn content_dir(&self) -> PathBuf {
+        self.project_dir().join("Content")
     }
     pub fn saved_dir(&self) -> PathBuf {
         self.project_dir().join("Saved")

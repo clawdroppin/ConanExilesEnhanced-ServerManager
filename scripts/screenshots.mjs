@@ -13,7 +13,7 @@ const PORT = 9555;
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
 if (!edge) throw new Error('Microsoft Edge not found');
 
-const profile = mkdtempSync(join(tmpdir(), 'dwsm-shots-'));
+const profile = mkdtempSync(join(tmpdir(), 'cesm-shots-'));
 const browser = spawn(edge, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--window-size=1440,900', '--hide-scrollbars', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -54,7 +54,7 @@ const shots = [
 ];
 for (const s of shots) {
   const ui = s.active === 'home' ? { tabs: [SERVER], active: 'home', views: {} } : { tabs: [SERVER, 'a1b2c3d4-0002'], active: SERVER, views: { [SERVER]: s.view } };
-  await evaluate(`localStorage.setItem('dwsm.ui', ${JSON.stringify(JSON.stringify(ui))}); location.reload();`);
+  await evaluate(`localStorage.setItem('cesm.ui', ${JSON.stringify(JSON.stringify(ui))}); location.reload();`);
   await sleep(s.wait ?? 3500);
   const r = await send('Page.captureScreenshot', { format: 'png' });
   writeFileSync(join(out, `${s.name}.png`), Buffer.from(r.result.data, 'base64'));

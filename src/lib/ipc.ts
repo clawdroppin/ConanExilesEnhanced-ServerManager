@@ -127,6 +127,8 @@ export const api = {
   clans: (id: string) => invoke<T.Clan[]>('game_clans', { id }),
   gameEvents: (id: string, limit: number, filter: string) => invoke<T.GameEvent[]>('game_events', { id, limit, filter }),
   worldSummary: (id: string) => invoke<T.WorldSummary>('world_summary', { id }),
+  listMaps: (id: string) => invoke<T.MapInfo[]>('list_maps', { id }),
+  listMapsIn: (installDir: string) => invoke<T.MapInfo[]>('list_maps_in', { installDir }),
   sqlQuery: (id: string, sql: string) => invoke<T.SqlTable>('sql_query', { id, sql }),
   playerAction: (id: string, action: string, userId: string, playerName: string, reason: string) =>
     invoke<string>('player_action', { id, action, userId, playerName, reason }),

@@ -43,7 +43,7 @@ export function ImportDialog() {
   }, [open]);
 
   const choosePack = async () => {
-    const p = await pickFile('Choose a server pack', ['dwserver', 'zip'], 'Conan Exiles server pack');
+    const p = await pickFile('Choose a server pack', ['ceserver', 'zip'], 'Conan Exiles server pack');
     if (!p) return;
     setPackPath(p);
     setError(null);
@@ -97,7 +97,7 @@ export function ImportDialog() {
         onChange={setTab}
         className="mb-4"
         options={[
-          { value: 'pack', label: 'Server pack (.dwserver)', icon: <Package className="size-3.5" /> },
+          { value: 'pack', label: 'Server pack (.ceserver)', icon: <Package className="size-3.5" /> },
           { value: 'folder', label: 'Existing install', icon: <FolderOpen className="size-3.5" /> },
         ]}
       />
@@ -201,7 +201,7 @@ export function ExportDialog() {
 
   const run = async () => {
     if (!inst) return;
-    const dest = await pickSave('Export server pack', `${inst.name.replace(/[^\w\- ]/g, '')}.dwserver`, ['dwserver'], 'Conan Exiles server pack');
+    const dest = await pickSave('Export server pack', `${inst.name.replace(/[^\w\- ]/g, '')}.ceserver`, ['ceserver'], 'Conan Exiles server pack');
     if (!dest) return;
     setBusy(true);
     try {
@@ -221,7 +221,7 @@ export function ExportDialog() {
       open={!!inst}
       onClose={() => setDialog(null)}
       title={`Export ${inst?.name ?? ''}`}
-      description="A single .dwserver file with the profile and config – import it on another PC or keep it as a template."
+      description="A single .ceserver file with the profile and config – import it on another PC or keep it as a template."
       icon={<Upload />}
       width={500}
       footer={

@@ -7,7 +7,8 @@ import { bytes, generatePassword } from '@/lib/format';
 import { SERVER_COLORS } from '@/lib/colors';
 import { pickFolder } from '@/lib/shell';
 import { BEACON_OFFSET, beaconPort } from '@/lib/net';
-import type { DedicatedSettings, FolderProbe } from '@/lib/types';
+import { DEFAULT_MAP, mergeMaps } from '@/lib/maps';
+import type { DedicatedSettings, FolderProbe, MapInfo } from '@/lib/types';
 import { useApp } from '@/store/app';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -33,9 +34,10 @@ export function NewServerDialog() {
   const [port, setPort] = useState(7777);
   const [maxPlayers, setMaxPlayers] = useState(16);
   const [template, setTemplate] = useState('');
-  const [ini, setIni] = useState<DedicatedSettings>({ ownerId: '', serverName: '', defaultWorldName: '', adminPassword: '', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
+  const [ini, setIni] = useState<DedicatedSettings>({ ownerId: '', serverName: '', defaultWorldName: '', defaultMap: DEFAULT_MAP, adminPassword: '', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
   const [installNow, setInstallNow] = useState(true);
   const [probe, setProbe] = useState<FolderProbe | null>(null);
+  const [discovered, setDiscovered] = useState<MapInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +49,7 @@ export function NewServerDialog() {
     setColor(Object.keys(SERVER_COLORS)[instances.length % Object.keys(SERVER_COLORS).length]);
     setDir('');
     setTemplate(dialog?.kind === 'new' ? (dialog.templateId ?? '') : '');
-    setIni({ ownerId: instances[0]?.ini?.ownerId ?? '', serverName: '', defaultWorldName: '', adminPassword: generatePassword(12), worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
+    setIni({ ownerId: instances[0]?.ini?.ownerId ?? '', serverName: '', defaultWorldName: '', defaultMap: DEFAULT_MAP, adminPassword: generatePassword(12), worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
     setMaxPlayers(6);
     setInstallNow(true);
     setError(null);
@@ -61,6 +63,18 @@ export function NewServerDialog() {
     return () => clearTimeout(t);
   }, [dir]);
 
+  // Auto-discover maps in the chosen install (new official maps + mod maps appear automatically).
+  useEffect(() => {
+    if (!dir) return setDiscovered([]);
+    let live = true;
+    const t = setTimeout(() => api.listMapsIn(dir).then((m) => live && setDiscovered(m)).catch(() => live && setDiscovered([])), 250);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [dir]);
+
+  const mapOptions = mergeMaps(discovered);
   const serverName = ini.serverName || name.slice(0, 16);
   const worldName = ini.defaultWorldName || name.replace(/[^A-Za-z0-9]/g, '').slice(0, 16) || 'MyWorld';
   const ownerErr = ownerIdProblem(ini.ownerId);
@@ -221,6 +235,17 @@ export function NewServerDialog() {
                 </div>
               </div>
               <div>
+                <Label>Map</Label>
+                <Select value={ini.defaultMap} onChange={(e) => setIni({ ...ini, defaultMap: e.target.value })}>
+                  {mapOptions.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label} — {m.hint}
+                    </option>
+                  ))}
+                </Select>
+                <div className="mt-1.5 text-[11.5px] text-fg-4">Which world the server runs. Each map keeps its own save file, so switching maps later starts a fresh world on that map.</div>
+              </div>
+              <div>
                 <Label>
                   <span className="flex items-center gap-1.5">
                     <Crown className="size-3 text-gold" /> Your Player ID (Owner ID)
@@ -251,8 +276,18 @@ export function NewServerDialog() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Max players · {maxPlayers}</Label>
-                  <Slider value={maxPlayers} min={1} max={100} onChange={setMaxPlayers} marks={[1, 4, 8, 16, 32, 64, 100]} />
+                  <Label>Max players</Label>
+                  <div className="flex items-center gap-3">
+                    <Slider value={maxPlayers} min={1} max={100} onChange={setMaxPlayers} marks={[1, 4, 8, 16, 32, 64, 100]} />
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={maxPlayers}
+                      onChange={(e) => setMaxPlayers(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+                      className="h-8 w-16 rounded-md border border-line bg-bg px-2 text-center font-mono text-[13px] text-fg focus:border-accent focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
             </>

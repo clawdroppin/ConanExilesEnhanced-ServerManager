@@ -4,6 +4,7 @@ pub mod download;
 pub mod gamedb;
 pub mod history;
 pub mod ini;
+pub mod maps;
 pub mod mods;
 pub mod modsync;
 pub mod network;

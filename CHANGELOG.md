@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Full server lifecycle: install, start, stop, restart, update, delete, clone
+- **Map selection** when creating a server and in Settings – pick Exiled Lands, Isle of Siptah, or any other map
+- **Automatic map discovery**: the manager scans the installed game for `.umap` assets, so new official maps and mod maps appear in the dropdown with no code change
+- **Console command input** in the Console tab – type a command and press Enter to run it against the live server (RCON), with up/down arrow history
+- **Max players**: slider *and* a typed number field (Funcom supports up to 100)
 - Structured UI for all `DedicatedServer.ini` settings and game rules
 - Steam Workshop mod management with shared download cache
 - Live telemetry: player count, server state, log tail, RCON console
@@ -27,3 +31,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Delete server now force-kills processes directly (no unnecessary backup or config write)
 - All "Dragonwilds" references removed from codebase
+- In-app title-bar logo now matches the app file icon (shield + C + crossed swords)
+- RCON response lines in the Console are labeled `rcon` (previously mislabeled `steam`)
