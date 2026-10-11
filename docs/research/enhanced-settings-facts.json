@@ -1,0 +1,1708 @@
+{
+ "source": "exiles-enhanced.inflexion.io/servers/settings (facts only: key, default, restart flag, dependencies) + ServerSettings.ini written by a fresh Enhanced 3.0.1 server (CL-379176)",
+ "fetched": "2026-10-10",
+ "doc": {
+  "AdminPassword": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AllowBuildingAnywhere": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AllowedTimeUndermesh": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "bUndermeshDetectionEnabled"
+   ],
+   "blueprint": false
+  },
+  "AllowFamilySharedAccount": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AltarModuleActiveTimeMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AmbientLifeEnabled": {
+   "docDefault": "TRUE",
+   "restart": true,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AnimalPenCraftingTimeMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AvatarDomeDamageMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled"
+   ],
+   "blueprint": true
+  },
+  "AvatarDomeDurationMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled"
+   ],
+   "blueprint": true
+  },
+  "AvatarLifetime": {
+   "docDefault": "600.0f",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled"
+   ],
+   "blueprint": false
+  },
+  "AvatarsDisabled": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "AvatarSummoningTimeWeekday[Time]": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled",
+    "RestrictAvatarSummoningTime"
+   ],
+   "blueprint": false
+  },
+  "AvatarSummoningTimeWeekend[Time]": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled",
+    "RestrictAvatarSummoningTime"
+   ],
+   "blueprint": false
+  },
+  "AvatarSummonTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled"
+   ],
+   "blueprint": false
+  },
+  "BuildFromStorageRadius": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingDamageMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingDecayTimeMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "BuildingDecayTimePerScore": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "BuildingPickupEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingPreloadRadius": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingPVPWhitelist": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingReplicationDistance": {
+   "docDefault": "Normal",
+   "restart": true,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "BuildingValidationEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "StabilityLossMultiplier > 0"
+   ],
+   "blueprint": false
+  },
+  "bUndermeshDetectionEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CampsIgnoreLandclaim": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "CanDamagePlayerOwnedStructures": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled"
+   ],
+   "blueprint": false
+  },
+  "CanImportDirectlyFromSameServer": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CapCharacterLayoutScalarParams": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ChatFloodControlAheadCounter": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ChatHasGlobal": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ChatLocalRadius": {
+   "docDefault": "5000.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ChatMaxMessageLength": {
+   "docDefault": "512",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ClanMaxSize": {
+   "docDefault": "30",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ClientCatchUpTime": {
+   "docDefault": "14.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CombatModeModifier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled"
+   ],
+   "blueprint": false
+  },
+  "ConciousnessDamageMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ContainersIgnoreOwnership": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CoopTetheringLimit": {
+   "docDefault": "52000.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CorpsesPerPlayer": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CraftFromStorageRadius": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CraftingCostMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CreativeModeServer": {
+   "docDefault": "AdminOnly",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "CrossDesertOnce": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "DamageCooldownBeforeRescue": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DawnDuskSpeedScale": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DayCycleSpeedScale": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DayTimeSpeedScale": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DecayBonusTimeRate": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "DecayCleanupTimeMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "DecayShowBuildingScore": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "DisableBuildingAbandonment": {
+   "docDefault": "TRUE",
+   "restart": true,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DisableBuildingDuringTimeRestrictedPVP": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPBuildingDamageTime"
+   ],
+   "blueprint": false
+  },
+  "DisableChatFormatting": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DisableLandclaimNotifications": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [
+    "!NoOwnership"
+   ],
+   "blueprint": false
+  },
+  "DisableThrallDecay": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DisconnectionGraceTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "?)EnableLoginQueue"
+   ],
+   "blueprint": false
+  },
+  "DropEquipmentOnDeath": {
+   "docDefault": "DropEverything",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DurabilityMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "DynamicBuildingDamage": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "CanDamagePlayerOwnedStructures"
+   ],
+   "blueprint": false
+  },
+  "DynamicBuildingDamagePeriod": {
+   "docDefault": "1800",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "CanDamagePlayerOwnedStructures",
+    "DynamicBuildingDamage"
+   ],
+   "blueprint": false
+  },
+  "ElderThingsEnabled": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "ElderThingsIdleLifespan": {
+   "docDefault": "30.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "ElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "ElderThingSiegeBuildingSizeMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "SiegeElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "ElderThingSiegeDamageMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "ElderThingSpawnRate": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "ElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "EnableBanCheck": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableBuildingDestructionCapsules": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableClanMarkers": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableFatalities": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableFollowerDbno": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableFollowerRescueInBuildExclusionZone": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableFollowerRescueOnLandClaimOnly": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableLoginQueue": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableSandStorm": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableTargetLock": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EnableWhitelist": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EventLogPvECauserPrivacy": {
+   "docDefault": "OwnersCanSee",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EventLogPvPCauserPrivacy": {
+   "docDefault": "AdminsCanSee",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EventSystemEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "EverybodyCanLootCorpse": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "FeatsBlacklist": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "FeedBoxRangeMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "FollowerRescueCooldown": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "FriendlyFireDamageMultiplier": {
+   "docDefault": "0.25",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "FuelBurnTimeMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "HarvestAmountMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "HealthbarVisibilityDistance": {
+   "docDefault": "15000.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "IPBlackList": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "IsLoadErrorsFatal": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ItemConvertionMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ItemRepairDurabilityLossByRepairkitTier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ItemRepairDurabilityLossPenaltyChance": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ItemRepairMinimumDurability": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ItemSpoilRateScale": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "KickAFKPercentage": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "KickAFKTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "LandClaimRadiusMultiplier": {
+   "docDefault": "1.0f",
+   "restart": true,
+   "reliesOn": [
+    "!NoOwnership"
+   ],
+   "blueprint": false
+  },
+  "LogoutCharactersRemainInTheWorld": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "LQAVPFadeTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "UseLocalQuadraticAngularVelocityPrediction"
+   ],
+   "blueprint": false
+  },
+  "LQAVPMethod": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "UseLocalQuadraticAngularVelocityPrediction"
+   ],
+   "blueprint": false
+  },
+  "LQAVPUseTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "UseLocalQuadraticAngularVelocityPrediction"
+   ],
+   "blueprint": false
+  },
+  "MaxAllowedPing": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "MaxAmbushElderThings": {
+   "docDefault": "200",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "ElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "MaxBuildingDecayTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "MaxDeathMapMarkers": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "MaxDecayTimeToAutoDemolish": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "MaxNudity": {
+   "docDefault": "Full",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "MaxSiegeElderThings": {
+   "docDefault": "5",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "SiegeElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "MinimumBuildingSizeToBeSieged": {
+   "docDefault": "41",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "SiegeElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "MinimumStormDamageBuildingPieces": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "StormBuildingDamageEnabled"
+   ],
+   "blueprint": false
+  },
+  "MinionOverpopulationAllowed": {
+   "docDefault": "10",
+   "restart": false,
+   "reliesOn": [
+    "UseMinionPopulationLimit"
+   ],
+   "blueprint": false
+  },
+  "MinionOverpopulationCleanup": {
+   "docDefault": "60",
+   "restart": false,
+   "reliesOn": [
+    "UseMinionPopulationLimit"
+   ],
+   "blueprint": false
+  },
+  "MinionPopulationBaseValue": {
+   "docDefault": "50",
+   "restart": false,
+   "reliesOn": [
+    "UseMinionPopulationLimit"
+   ],
+   "blueprint": false
+  },
+  "MinionPopulationPerPlayer": {
+   "docDefault": "5",
+   "restart": false,
+   "reliesOn": [
+    "UseMinionPopulationLimit"
+   ],
+   "blueprint": false
+  },
+  "NetworkSimulatedSmoothRotationTimeWithLQAVP": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "UseLocalQuadraticAngularVelocityPrediction"
+   ],
+   "blueprint": false
+  },
+  "NightTimeSpeedScale": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "NoOwnership": {
+   "docDefault": "FALSE",
+   "restart": true,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "NPCCorpseLifeTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "NPCDamageMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "NPCDamageTakenMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "NPCMaxSpawnCapMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "NPCRespawnMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "OfflinePlayersUnconsciousBodiesHours": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "LogoutCharactersRemainInTheWorld"
+   ],
+   "blueprint": false
+  },
+  "OverrideDecayMaxBuildingPieces": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment"
+   ],
+   "blueprint": false
+  },
+  "OverrideDecayTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "!DisableBuildingAbandonment && OverrideDecayMaxBuildingPieces"
+   ],
+   "blueprint": false
+  },
+  "PathFollowingSendsAngularVelocity": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PersonalCraftFromStorageRadius": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerActiveHungerMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerActiveThirstMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerBuildingDamageMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerCorpseLifeTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerCorruptionGainFromSorceryMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerCorruptionGainMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerDamageMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerDamageTakenMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerIdleHungerMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerIdleThirstMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerMovementAccelerationMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerOfflineHungerMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerOfflineThirstMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerStaminaRegenSpeedScale": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PlayerWaterMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerXPCraftMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerXPHarvestMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerXPKillMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerXPRateMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PlayerXPTimeMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PoiProtectionEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PVPBuildingDamageEnabled[Weekday]": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPBuildingDamageTime"
+   ],
+   "blueprint": false
+  },
+  "PVPBuildingDamageTime[Weekday]End": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPBuildingDamageTime"
+   ],
+   "blueprint": false
+  },
+  "PVPBuildingDamageTime[Weekday]Start": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPBuildingDamageTime"
+   ],
+   "blueprint": false
+  },
+  "PVPEnabled": {
+   "docDefault": "FALSE",
+   "restart": true,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "PVPEnabled[Weekday]": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPTime"
+   ],
+   "blueprint": false
+  },
+  "PvPMountEnduranceDamageMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "PVPTime[Weekday]End": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPTime"
+   ],
+   "blueprint": false
+  },
+  "PVPTime[Weekday]Start": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "RestrictPVPTime"
+   ],
+   "blueprint": false
+  },
+  "RegionAllow[Region]": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "RegionBlockList": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ResourceRespawnSpeedMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "RestrictAvatarSummoningTime": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "!AvatarsDisabled"
+   ],
+   "blueprint": false
+  },
+  "RestrictPVPBuildingDamageTime": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled",
+    "CanDamagePlayerOwnedStructures"
+   ],
+   "blueprint": false
+  },
+  "RestrictPVPTime": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "PVPEnabled"
+   ],
+   "blueprint": false
+  },
+  "ServerBlacklistedFeatIDs": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ServerBuildingPVPWhitelistIDs": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "DisableBuildingDuringTimeRestrictedPVP"
+   ],
+   "blueprint": false
+  },
+  "ServerMergeDestination": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "ServerMergeOutgoingTime > 0"
+   ],
+   "blueprint": false
+  },
+  "ServerMergeOutgoingTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ServerMessageOfTheDay": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ServerPassword": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ServerTransferEnabled": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ServerTransferServersWhitelist": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [
+    "ServerTransferEnabled"
+   ],
+   "blueprint": false
+  },
+  "ServerVoiceChat": {
+   "docDefault": "Enabled",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ShieldDurabilityMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "ShowOnlinePlayers": {
+   "docDefault": "ShowAll",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "SiegeElderThingMapMarkers": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "SiegeElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "SiegeElderThingRespawnRate": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "SiegeElderThingsEnabled"
+   ],
+   "blueprint": false
+  },
+  "SiegeElderThingsEnabled": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StabilityLossMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaCostMultiplier": {
+   "docDefault": "1",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaExhaustionTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaMovingRegenRateMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaOnConsumeRegenPause": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaOnExhaustionRegenPause": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaRegenerationTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StaminaStaticRegenRateMultiplier": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StormAccumulationTime": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormBuildingAllowed": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormBuildingDamageEnabled": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormBuildingDamageMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "StormBuildingDamageEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormBuildingDamageRateMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled",
+    "StormBuildingDamageEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormCooldown": {
+   "docDefault": "105.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormDissipationTime": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormDuration": {
+   "docDefault": "15.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormEnabled": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "StormEnduranceDrainMultiplier": {
+   "docDefault": "0.f",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormMapBlocker": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormMinimumOnlinePlayers": {
+   "docDefault": "0",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormTimeWeekday[Time]": {
+   "docDefault": "0000 - 2359",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "StormTimeWeekend[Time]": {
+   "docDefault": "0000 - 2359",
+   "restart": false,
+   "reliesOn": [
+    "StormEnabled"
+   ],
+   "blueprint": false
+  },
+  "SurgeDespawnTimer": {
+   "docDefault": "90",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "SurgeSacrificeRequirementMultiplier": {
+   "docDefault": "1.f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "TetheringMaxLimit": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "TetheringMinLimit": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "TetheringRangeDelta": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallConversionMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallCorruptionRemovalMultiplier": {
+   "docDefault": "1.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallDamageToNPCsMultiplier": {
+   "docDefault": "0.5f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallDamageToPlayersMultiplier": {
+   "docDefault": "0.5f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallDecayTime": {
+   "docDefault": "1296000",
+   "restart": false,
+   "reliesOn": [
+    "!DisableThrallDecay"
+   ],
+   "blueprint": false
+  },
+  "ThrallExclusionRadius": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": true
+  },
+  "ThrallMinDistanceAwayFromHome": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallScoutingTimeMinutes": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ThrallTeleportingCooldown": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "UnconsciousTimeSeconds": {
+   "docDefault": "10 * 60.0f",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "UseClientCatchUpTime": {
+   "docDefault": "TRUE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "UseLocalQuadraticAngularVelocityPrediction": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "UseMinionPopulationLimit": {
+   "docDefault": "FALSE",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "ValidatePlayerStats": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "VaultRefreshDeviation": {
+   "docDefault": "2",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  },
+  "VaultRefreshTime": {
+   "docDefault": "",
+   "restart": false,
+   "reliesOn": [],
+   "blueprint": false
+  }
+ },
+ "fileDefaults": {
+  "NPCMindReadingMode": "0",
+  "MaxNudity": "0",
+  "ConfigVersion": "13",
+  "BlueprintConfigVersion": "25",
+  "BuildingPVPWhitelist": "(\"80901\",\"80111\",\"80112\",\"80915\",\"80912\")",
+  "PlayerKnockbackMultiplier": "1",
+  "NPCKnockbackMultiplier": "1",
+  "StructureDamageMultiplier": "1",
+  "StructureHealthMultiplier": "1",
+  "NPCRespawnMultiplier": "1",
+  "NPCHealthMultiplier": "1",
+  "PlayerDamageMultiplier": "1",
+  "PlayerDamageTakenMultiplier": "1",
+  "MinionDamageMultiplier": "1",
+  "MinionDamageTakenMultiplier": "1",
+  "NPCDamageMultiplier": "1",
+  "NPCDamageTakenMultiplier": "1",
+  "PlayerEncumbranceMultiplier": "1",
+  "PlayerEncumbrancePenaltyMultiplier": "1",
+  "PlayerMovementSpeedScale": "1",
+  "PlayerStaminaCostSprintMultiplier": "1",
+  "PlayerSprintSpeedScale": "1",
+  "PlayerStaminaCostMultiplier": "1",
+  "PlayerHealthRegenSpeedScale": "1",
+  "PlayerXPRateMultiplier": "1",
+  "PlayerXPKillMultiplier": "1",
+  "PlayerXPHarvestMultiplier": "1",
+  "PlayerXPCraftMultiplier": "1",
+  "PlayerXPTimeMultiplier": "1",
+  "DogsOfTheDesertSpawnWithDogs": "False",
+  "CrossDesertOnce": "True",
+  "ThrallExclusionRadius": "100",
+  "MaxAggroRange": "9000",
+  "FriendlyFireDamageMultiplier": "0.25",
+  "CampsIgnoreLandclaim": "True",
+  "AvatarDomeDurationMultiplier": "1",
+  "AvatarDomeDamageMultiplier": "1",
+  "NPCMaxSpawnCapMultiplier": "1",
+  "PvPMountEnduranceDamageMultiplier": "1",
+  "serverRegion": "0",
+  "AmbientLifeEnabled": "True",
+  "CraftFromStorageRadius": "4000",
+  "BuildFromStorageRadius": "4000",
+  "PVPBuildFromStorageRadius": "600",
+  "PersonalCraftFromStorageRadius": "4000",
+  "BuildingReplicationDistance": "0",
+  "PVPEnabled": "False",
+  "RestrictPVPTime": "False",
+  "RestrictPVPBuildingDamageTime": "False",
+  "PVPTimeMondayStart": "0",
+  "PVPTimeTuesdayStart": "0",
+  "PVPTimeWednesdayStart": "0",
+  "PVPTimeThursdayStart": "0",
+  "PVPTimeFridayStart": "0",
+  "PVPTimeSaturdayStart": "0",
+  "PVPTimeSundayStart": "0",
+  "PVPTimeMondayEnd": "0",
+  "PVPTimeTuesdayEnd": "0",
+  "PVPTimeWednesdayEnd": "0",
+  "PVPTimeThursdayEnd": "0",
+  "PVPTimeFridayEnd": "0",
+  "PVPTimeSaturdayEnd": "0",
+  "PVPTimeSundayEnd": "0",
+  "PVPEnabledMonday": "False",
+  "PVPEnabledTuesday": "False",
+  "PVPEnabledWednesday": "False",
+  "PVPEnabledThursday": "False",
+  "PVPEnabledFriday": "False",
+  "PVPEnabledSaturday": "False",
+  "PVPEnabledSunday": "False",
+  "PVPBuildingDamageTimeMondayStart": "0",
+  "PVPBuildingDamageTimeTuesdayStart": "0",
+  "PVPBuildingDamageTimeWednesdayStart": "0",
+  "PVPBuildingDamageTimeThursdayStart": "0",
+  "PVPBuildingDamageTimeFridayStart": "0",
+  "PVPBuildingDamageTimeSaturdayStart": "0",
+  "PVPBuildingDamageTimeSundayStart": "0",
+  "PVPBuildingDamageTimeMondayEnd": "0",
+  "PVPBuildingDamageTimeTuesdayEnd": "0",
+  "PVPBuildingDamageTimeWednesdayEnd": "0",
+  "PVPBuildingDamageTimeThursdayEnd": "0",
+  "PVPBuildingDamageTimeFridayEnd": "0",
+  "PVPBuildingDamageTimeSaturdayEnd": "0",
+  "PVPBuildingDamageTimeSundayEnd": "0",
+  "PVPBuildingDamageEnabledMonday": "False",
+  "PVPBuildingDamageEnabledTuesday": "False",
+  "PVPBuildingDamageEnabledWednesday": "False",
+  "PVPBuildingDamageEnabledThursday": "False",
+  "PVPBuildingDamageEnabledFriday": "False",
+  "PVPBuildingDamageEnabledSaturday": "False",
+  "PVPBuildingDamageEnabledSunday": "False",
+  "DisableBuildingDuringTimeRestrictedPVP": "False",
+  "CombatModeModifier": "0",
+  "ContainersIgnoreOwnership": "True",
+  "LandClaimRadiusMultiplier": "1",
+  "DisableLandclaimNotifications": "True",
+  "BuildingPreloadRadius": "80",
+  "CanDamagePlayerOwnedStructures": "False",
+  "DynamicBuildingDamage": "False",
+  "DynamicBuildingDamagePeriod": "1800",
+  "CreativeModeServer": "0",
+  "ServerPassword": "",
+  "ServerMessageOfTheDay": "",
+  "KickAFKPercentage": "80",
+  "KickAFKTime": "2700",
+  "OfflinePlayersUnconsciousBodiesHours": "168",
+  "ShowOnlinePlayers": "0",
+  "CorpsesPerPlayer": "10",
+  "PlayerCorpseLifeTime": "1800",
+  "NPCCorpseLifeTime": "600",
+  "ItemRepairMinimumDurability": "0.100000001",
+  "ItemRepairDurabilityLossByRepairkitTier": "(0.200000,0.200000,0.150000,0.100000,0.050000,0.025000)",
+  "ItemRepairDurabilityLossPenaltyChance": "1",
+  "ItemConvertionMultiplier": "1",
+  "ThrallConversionMultiplier": "1",
+  "FuelBurnTimeMultiplier": "1",
+  "CraftingCostMultiplier": "1",
+  "StaminaRegenerationTime": "3.75",
+  "StaminaExhaustionTime": "3.75",
+  "StaminaStaticRegenRateMultiplier": "1",
+  "StaminaMovingRegenRateMultiplier": "1",
+  "PlayerStaminaRegenSpeedScale": "1",
+  "StaminaOnConsumeRegenPause": "1.10000002",
+  "StaminaOnExhaustionRegenPause": "2",
+  "ThrallScoutingTimeMinutes": "10",
+  "ThrallMinDistanceAwayFromHome": "5000",
+  "ThrallTeleportingCooldown": "10",
+  "MinionPopulationBaseValue": "50",
+  "MinionPopulationPerPlayer": "5",
+  "MinionOverpopulationCleanup": "60",
+  "MinionOverpopulationAllowed": "10",
+  "EnableFollowerDbno": "True",
+  "UseMinionPopulationLimit": "False",
+  "EnableFollowerRescueOnLandClaimOnly": "True",
+  "EnableFollowerRescueInBuildExclusionZone": "False",
+  "FollowerRescueCooldown": "3600",
+  "DamageCooldownBeforeRescue": "600",
+  "ThrallCorruptionRemovalMultiplier": "1",
+  "PlayerCorruptionGainMultiplier": "1",
+  "PlayerCorruptionGainFromSorceryMultiplier": "1",
+  "AnimalPenCraftingTimeMultiplier": "1",
+  "FeedBoxRangeMultiplier": "1",
+  "BuildingDamageMultiplier": "1",
+  "PathFollowingSendsAngularVelocity": "False",
+  "UnconsciousTimeSeconds": "1800",
+  "ConciousnessDamageMultiplier": "1",
+  "ThrallDamageToPlayersMultiplier": "0.5",
+  "ThrallDamageToNPCsMultiplier": "0.5",
+  "DisableBuildingAbandonment": "True",
+  "MaxBuildingDecayTime": "1296000",
+  "MaxDecayTimeToAutoDemolish": "604800",
+  "ThrallDecayTime": "1296000",
+  "DisableThrallDecay": "True",
+  "BuildingDecayTimePerScore": "5400",
+  "BuildingDecayTimeMultiplier": "1",
+  "DecayCleanupTimeMultiplier": "2",
+  "DecayBonusTimeRate": "600",
+  "DecayShowBuildingScore": "False",
+  "EnableTargetLock": "True",
+  "EnableFatalities": "True",
+  "CachedLandClaimRadiusMultiplier": "1",
+  "CachedBuildingReplicationDistance": "0",
+  "ValidatePhysNavWalkWithRaycast": "True",
+  "LocalNavMeshVisualizationFrequency": "-1",
+  "LocalLandClaimVisualizationFrequency": "-1",
+  "LocalLandClaimVisualizationRadius": "3000",
+  "LocalLandClaimVisualizationChannel": "0",
+  "UseLocalQuadraticAngularVelocityPrediction": "False",
+  "LQAVPUseTime": "0.150000006",
+  "LQAVPFadeTime": "0.100000001",
+  "LQAVPMethod": "2",
+  "NetworkSimulatedSmoothRotationTimeWithLQAVP": "0.100000001",
+  "EnableClanMarkers": "True",
+  "ValidatePlayerStats": "False",
+  "bUndermeshDetectionEnabled": "True",
+  "AllowedTimeUndermesh": "1",
+  "CapCharacterLayoutScalarParams": "False",
+  "EventLogPvPCauserPrivacy": "2",
+  "EventLogPvECauserPrivacy": "1",
+  "serverVoiceChat": "1",
+  "AvatarsDisabled": "False",
+  "RestrictAvatarSummoningTime": "False",
+  "AvatarSummoningTimeWeekdayStart": "0",
+  "AvatarSummoningTimeWeekdayEnd": "0",
+  "AvatarSummoningTimeWeekendStart": "0",
+  "AvatarSummoningTimeWeekendEnd": "0",
+  "AvatarLifetime": "600",
+  "AvatarSummonTime": "60",
+  "MaxDeathMapMarkers": "3",
+  "IsBattlEyeEnabled": "False",
+  "ServerTransferEnabled": "True",
+  "ServerTransferServersWhitelist": "",
+  "MaxAllowedPing": "0",
+  "AllowFamilySharedAccount": "True",
+  "RegionAllowAfrica": "True",
+  "RegionAllowAsia": "True",
+  "RegionAllowCentralEurope": "True",
+  "RegionAllowEasternEurope": "True",
+  "RegionAllowWesternEurope": "True",
+  "RegionAllowNorthAmerica": "True",
+  "RegionAllowOceania": "True",
+  "RegionAllowSouthAmerica": "True",
+  "RegionBlockList": "",
+  "ServerModList": "",
+  "BuildingPickupEnabled": "True",
+  "PoiProtectionEnabled": "False",
+  "EventSystemEnabled": "True",
+  "StabilityLossMultiplier": "1",
+  "BuildingValidationEnabled": "False",
+  "AllowBuildingAnywhere": "False",
+  "HealthbarVisibilityDistance": "15000",
+  "ServerMergeOutgoingTime": "0",
+  "ServerMergeDestination": "",
+  "ServerRetirementTime": "0",
+  "DisableChatFormatting": "True",
+  "EnableLoginQueue": "True",
+  "DisconnectionGraceTime": "180",
+  "bCanBeDamaged": "True"
+ }
+}

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1d14"/>
+      <stop offset="1" stop-color="#0d0907"/>
+    </linearGradient>
+    <linearGradient id="bronze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="0.45" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e7e5e4"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#a8a29e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.38" r="0.6">
+      <stop offset="0" stop-color="#f97316" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#bg)"/>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#glow)"/>
+  <rect x="44" y="44" width="936" height="936" rx="188" fill="none" stroke="#f59e0b" stroke-opacity="0.35" stroke-width="8"/>
+  <!-- crossed blades -->
+  <g stroke-linecap="round">
+    <g transform="rotate(-38 512 520)">
+      <rect x="494" y="150" width="36" height="560" rx="14" fill="url(#steel)"/>
+      <path d="M512 118 L536 170 L488 170 Z" fill="#fafaf9"/>
+      <rect x="430" y="700" width="164" height="30" rx="15" fill="url(#bronze)"/>
+      <rect x="497" y="728" width="30" height="120" rx="12" fill="#7c2d12"/>
+      <circle cx="512" cy="868" r="26" fill="url(#bronze)"/>
+    </g>
+    <g transform="rotate(38 512 520)">
+      <rect x="494" y="150" width="36" height="560" rx="14" fill="url(#steel)"/>
+      <path d="M512 118 L536 170 L488 170 Z" fill="#fafaf9"/>
+      <rect x="430" y="700" width="164" height="30" rx="15" fill="url(#bronze)"/>
+      <rect x="497" y="728" width="30" height="120" rx="12" fill="#7c2d12"/>
+      <circle cx="512" cy="868" r="26" fill="url(#bronze)"/>
+    </g>
+  </g>
+  <!-- shield -->
+  <path d="M512 330 L700 400 C700 580 630 690 512 760 C394 690 324 580 324 400 Z" fill="#1c1410" stroke="url(#bronze)" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M512 380 L652 432 C650 566 598 650 512 704 C426 650 374 566 372 432 Z" fill="url(#bronze)" opacity="0.18"/>
+  <!-- C rune -->
+  <path d="M590 470 A96 96 0 1 0 590 618" fill="none" stroke="url(#bronze)" stroke-width="40" stroke-linecap="round"/>
+</svg>

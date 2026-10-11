@@ -1,0 +1,14 @@
+node_modules
+dist
+release
+src-tauri/target
+src-tauri/gen
+*.tsbuildinfo
+
+# Real server installs used for verification (see AGENTS.md §8) - never commit
+.test-server
+.test-server-install.log
+.test-workshop
+
+# Previous AI attempt, kept locally for reference only
+_archive

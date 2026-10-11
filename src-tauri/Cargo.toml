@@ -1,0 +1,53 @@
+[package]
+name = "conan-enhanced-server-manager"
+version = "1.0.0"
+description = "Conan Exiles: Enhanced dedicated server manager"
+license = "MIT"
+authors = ["clawdroppin"]
+repository = "https://github.com/clawdroppin/ConanExilesEnhanced-ServerManager"
+edition = "2021"
+
+[lib]
+name = "cesm_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+panic = "abort"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+chrono = { version = "0.4.45", features = ["serde"] }
+regex = "1.13.1"
+reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "json", "stream", "http2", "form"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sysinfo = { version = "0.39.6", default-features = false, features = ["system", "network", "disk"] }
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["full"] }
+uuid = { version = "1.27.0", features = ["v4"] }
+walkdir = "2.5.0"
+zip = { version = "9.0.0", default-features = false, features = ["deflate-flate2-zlib-rs", "time"] }
+futures-util = "0.3.34"
+igd-next = { version = "0.16", default-features = false, features = ["aio_tokio"] }
+rusqlite = { version = "0.40.2", features = ["bundled", "backup"] }
+sha2 = "0.11.0"
+base64 = "0.23.1"
+tauri-plugin-notification = "2.5.1"
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
+filetime = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_Security_Cryptography", "Win32_System_Memory"] }

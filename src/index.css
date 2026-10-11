@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@theme {
+  --font-sans: 'Inter Variable', 'Segoe UI Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'Cascadia Code', Consolas, monospace;
+
+  /* Warm stone surfaces */
+  --color-bg: #0b0908;
+  --color-bg-raised: #100d0b;
+  --color-panel: #15110f;
+  --color-panel-2: #1b1613;
+  --color-hover: #231d19;
+  --color-line: #2a221d;
+  --color-line-strong: #382d26;
+  --color-fg: #f5f0eb;
+  --color-fg-2: #b8ada4;
+  --color-fg-3: #85786e;
+  --color-fg-4: #5c514a;
+
+  /* Ember accent */
+  --color-accent: #fb923c;
+  --color-accent-strong: #f97316;
+  --color-accent-deep: #c2410c;
+  --color-accent-dim: #43200d;
+  --color-gold: #fbbf24;
+  --color-ok: #4ade80;
+  --color-warn: #facc15;
+  --color-err: #f87171;
+  --color-info: #60a5fa;
+  --color-violet: #a78bfa;
+
+  --radius-xl: 14px;
+  --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 237 213 / 0.06);
+  --shadow-glow: 0 0 0 1px rgb(249 115 22 / 0.35), 0 8px 30px -8px rgb(249 115 22 / 0.45);
+
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    user-select: none;
+    font-size: 13px;
+  }
+  input,
+  textarea,
+  [contenteditable],
+  .selectable {
+    user-select: text;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3a2f28 transparent;
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: default;
+  }
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+}
+
+@utility glass {
+  background: color-mix(in srgb, var(--color-panel) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+@utility text-ember {
+  background: linear-gradient(135deg, #fde68a 0%, #fb923c 45%, #f97316 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-ember {
+  background-image: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+}
+
+@utility shimmer-bar {
+  background-image: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--color-accent) 55%, transparent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility ember-grid {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgb(249 115 22 / 0.12), transparent 70%),
+    linear-gradient(rgb(255 237 213 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 237 213 / 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+
+/* Range input – the Slider component draws the track */
+input[type='range'].range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 22px;
+  width: 100%;
+}
+input[type='range'].range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+input[type='range'].range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 3px solid var(--color-accent-strong);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  transition: transform 120ms ease;
+}
+input[type='range'].range:active::-webkit-slider-thumb {
+  transform: scale(1.18);
+}
+
+.cm-editor {
+  height: 100%;
+  font-size: 12.5px;
+}
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
