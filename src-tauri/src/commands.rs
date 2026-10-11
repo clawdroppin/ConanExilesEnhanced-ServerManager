@@ -445,7 +445,7 @@ pub async fn clone_instance(state: St<'_>, id: String, name: String, copy_saves:
     let tmp = state.data_dir.join("tmp");
     blocking(move || {
         std::fs::create_dir_all(d2.config_dir())?;
-        for f in ["ServerSettings.ini", "Engine.ini", "Game.ini", "ModHttp.ini"] {
+        for f in ["ServerSettings.ini", "DedicatedServer.ini", "Engine.ini", "Game.ini", "ModHttp.ini"] {
             let p = s2.config_dir().join(f);
             if p.exists() {
                 ini::write_file(&d2.config_dir().join(f), &ini::read_file(&p)?)?;
@@ -640,7 +640,7 @@ pub async fn reset_game_rules(state: St<'_>, id: String, keys: Vec<String>) -> A
 
 // ------------------------------------------------------------------------------------- config
 
-const CONFIG_FILES: [&str; 4] = ["ServerSettings.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
+const CONFIG_FILES: [&str; 5] = ["ServerSettings.ini", "DedicatedServer.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
 
 fn check_file(file: &str) -> AppResult<()> {
     if CONFIG_FILES.contains(&file) {
@@ -815,6 +815,11 @@ pub async fn player_history(state: St<'_>, id: String) -> AppResult<Vec<history:
 }
 
 #[tauri::command]
+pub async fn server_stats(state: St<'_>, id: String) -> AppResult<Option<history::ServerStats>> {
+    Ok(state.history.server_stats(&id))
+}
+
+#[tauri::command]
 pub async fn game_characters(state: St<'_>, id: String) -> AppResult<Vec<gamedb::Character>> {
     let inst = state.instance(&id).await?;
     blocking(move || gamedb::characters(&inst.db_path())).await
@@ -958,52 +963,128 @@ pub async fn remove_list_entry(state: St<'_>, id: String, list: String, raw: Str
     Ok(())
 }
 
-// ---------------------------------------------------------------------------------------- saves
+// ---------------------------------------------------------------------------------------- world
 
-fn saves_dir(inst: &ServerInstance) -> PathBuf {
-    inst.saved_dir().join("SaveGames")
+/// The live world database. Enhanced uses `game_0.db`; legacy uses `game.db`.
+fn live_world(inst: &ServerInstance) -> PathBuf {
+    inst.db_path()
 }
 
-fn list_saves_in(dir: &Path, active_name: Option<&str>) -> Vec<SaveFile> {
+/// The server's rolling world snapshots (`game_0_backup_N.db` on Enhanced, `game_backup_N.db`
+/// on legacy), newest first. The prefix is derived from the live world's file name.
+fn world_snapshots(inst: &ServerInstance) -> Vec<PathBuf> {
+    let saved = inst.saved_dir();
+    // Live world is `game_0.db` (Enhanced) or `game.db` (legacy) → backups are `<base>_backup_N.db`.
+    let base = live_world(inst)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let stem = base.strip_suffix(".db").unwrap_or(&base);
+    let prefix = format!("{}_backup_", stem);
     let mut out = vec![];
-    if let Ok(rd) = std::fs::read_dir(dir) {
+    if let Ok(rd) = std::fs::read_dir(&saved) {
         for e in rd.flatten() {
-            let p = e.path();
-            if p.is_file() && p.extension().map(|x| x.eq_ignore_ascii_case("sav")).unwrap_or(false) {
-                let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                let meta = std::fs::metadata(&p).ok();
-                let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
-                let modified = meta.and_then(|m| m.modified().ok()).and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs() as i64).unwrap_or(0);
-                let active = active_name.map(|a| a == name).unwrap_or(false);
-                out.push(SaveFile { name, path: p.display().to_string(), size, modified, active });
+            let name = e.file_name();
+            let ns = name.to_string_lossy();
+            if ns.starts_with(&prefix) && ns.ends_with(".db") {
+                out.push(e.path());
             }
         }
     }
-    out.sort_by(|a, b| b.modified.cmp(&a.modified));
+    out.sort_by(|a, b| {
+        let ma = std::fs::metadata(a).and_then(|m| m.modified()).ok();
+        let mb = std::fs::metadata(b).and_then(|m| m.modified()).ok();
+        mb.cmp(&ma)
+    });
     out
 }
 
+fn snapshot_of(p: &Path, active: bool) -> Option<WorldSnapshot> {
+    let meta = std::fs::metadata(p).ok()?;
+    let size = meta.len();
+    let modified = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    Some(WorldSnapshot { name, path: p.display().to_string(), size, modified, active })
+}
+
 #[tauri::command]
-pub async fn list_saves(state: St<'_>, id: String) -> AppResult<Vec<SaveFile>> {
+pub async fn list_worlds(state: St<'_>, id: String) -> AppResult<Vec<WorldSnapshot>> {
     let inst = state.instance(&id).await?;
-    let dir = saves_dir(&inst);
     blocking(move || {
-        let saves = list_saves_in(&dir, None);
-        // The active save is the newest one (the server loads the newest .sav).
-        let active_name = saves.first().map(|s| s.name.clone());
-        Ok(saves.into_iter().map(|mut s| { s.active = active_name.as_deref() == Some(s.name.as_str()); s }).collect())
-    }).await
+        let mut out: Vec<WorldSnapshot> = vec![];
+        let live = live_world(&inst);
+        if let Some(s) = snapshot_of(&live, true) {
+            out.push(s);
+        }
+        for p in world_snapshots(&inst) {
+            if let Some(s) = snapshot_of(&p, false) {
+                out.push(s);
+            }
+        }
+        Ok(out)
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn list_local_saves(state: St<'_>, id: String) -> AppResult<Vec<SaveFile>> {
+pub async fn restore_world(state: St<'_>, id: String, name: String) -> AppResult<()> {
     let inst = state.instance(&id).await?;
-    let dir = inst.saved_dir().join("LocalSaves");
-    blocking(move || Ok(list_saves_in(&dir, None))).await
+    let running = server::running_pids(&inst).1.is_some();
+    if running {
+        return Err(AppError::msg("Stop the server before restoring a world snapshot."));
+    }
+    let name2 = name.clone();
+    blocking(move || {
+        let saved = inst.saved_dir();
+        let src = saved.join(&name2);
+        if !src.is_file() {
+            return Err(AppError::msg("Snapshot not found."));
+        }
+        let live = live_world(&inst);
+        // Quarantine the current live world (and its WAL side files) so it can be recovered.
+        let mut to_quarantine = vec![live.clone()];
+        for side in ["-wal", "-shm"] {
+            let p = PathBuf::from(format!("{}{}", live.display(), side));
+            if p.exists() {
+                to_quarantine.push(p);
+            }
+        }
+        backup::quarantine_files(&inst, &to_quarantine, "restore-world")?;
+        std::fs::copy(&src, &live)?;
+        Ok(())
+    })
+    .await?;
+    state.history.audit(Some(&id), "restore-world", &name);
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn import_save(state: St<'_>, id: String, path: PathBuf) -> AppResult<()> {
+pub async fn export_world(state: St<'_>, id: String, name: String, dest: PathBuf) -> AppResult<()> {
+    let inst = state.instance(&id).await?;
+    let name2 = name.clone();
+    blocking(move || {
+        let src = inst.saved_dir().join(&name2);
+        if !src.is_file() {
+            return Err(AppError::msg("World file not found."));
+        }
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(&src, &dest)?;
+        Ok(())
+    })
+    .await?;
+    state.history.audit(Some(&id), "export-world", &name);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn import_world(state: St<'_>, id: String, path: PathBuf) -> AppResult<()> {
     let inst = state.instance(&id).await?;
     let running = server::running_pids(&inst).1.is_some();
     if running {
@@ -1014,105 +1095,43 @@ pub async fn import_save(state: St<'_>, id: String, path: PathBuf) -> AppResult<
         if !path2.is_file() {
             return Err(AppError::msg("File not found."));
         }
-        let dir = saves_dir(&inst);
-        std::fs::create_dir_all(&dir)?;
-        let name = path2.file_name().ok_or_else(|| AppError::msg("Invalid file name."))?;
-        let dest = dir.join(name);
-        if dest.exists() {
-            return Err(AppError::msg("A save with that name already exists."));
+        let live = live_world(&inst);
+        // Quarantine the current live world (and its WAL side files) so it can be recovered.
+        let mut to_quarantine = vec![live.clone()];
+        for side in ["-wal", "-shm"] {
+            let p = PathBuf::from(format!("{}{}", live.display(), side));
+            if p.exists() {
+                to_quarantine.push(p);
+            }
         }
-        std::fs::copy(&path2, &dest)?;
+        backup::quarantine_files(&inst, &to_quarantine, "import-world")?;
+        std::fs::copy(&path2, &live)?;
         Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "import-save", &path.display().to_string());
+    })
+    .await?;
+    state.history.audit(Some(&id), "import-world", &path.display().to_string());
     Ok(())
 }
 
 #[tauri::command]
-pub async fn activate_save(state: St<'_>, id: String, name: String) -> AppResult<()> {
+pub async fn delete_world(state: St<'_>, id: String, name: String) -> AppResult<()> {
     let inst = state.instance(&id).await?;
     let running = server::running_pids(&inst).1.is_some();
     if running {
-        return Err(AppError::msg("Stop the server before switching worlds."));
+        return Err(AppError::msg("Stop the server before deleting a world snapshot."));
     }
     let name2 = name.clone();
     blocking(move || {
-        let dir = saves_dir(&inst);
-        let src = dir.join(&name2);
-        if !src.is_file() {
-            return Err(AppError::msg("Save not found."));
-        }
-        // Touch the file so it becomes the newest (the server loads the newest .sav).
-        let now = std::time::SystemTime::now();
-        filetime::set_file_mtime(&src, filetime::FileTime::from_system_time(now))?;
-        Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "activate-save", &name);
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn export_save(state: St<'_>, id: String, name: String, dest: PathBuf) -> AppResult<()> {
-    let inst = state.instance(&id).await?;
-    let name2 = name.clone();
-    blocking(move || {
-        let src = saves_dir(&inst).join(&name2);
-        if !src.is_file() {
-            return Err(AppError::msg("Save not found."));
-        }
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        std::fs::copy(&src, &dest)?;
-        Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "export-save", &name);
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn delete_save(state: St<'_>, id: String, name: String) -> AppResult<()> {
-    let inst = state.instance(&id).await?;
-    let running = server::running_pids(&inst).1.is_some();
-    if running {
-        return Err(AppError::msg("Stop the server before deleting saves."));
-    }
-    let name2 = name.clone();
-    blocking(move || {
-        let p = saves_dir(&inst).join(&name2);
+        let p = inst.saved_dir().join(&name2);
         if !p.is_file() {
-            return Err(AppError::msg("Save not found."));
+            return Err(AppError::msg("World file not found."));
         }
-        std::fs::remove_file(&p)?;
+        // Quarantine instead of hard-delete so it can be recovered.
+        backup::quarantine_files(&inst, &[p], "delete-world")?;
         Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "delete-save", &name);
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn rename_save(state: St<'_>, id: String, name: String, new_name: String) -> AppResult<()> {
-    let inst = state.instance(&id).await?;
-    let running = server::running_pids(&inst).1.is_some();
-    if running {
-        return Err(AppError::msg("Stop the server before renaming saves."));
-    }
-    let nn = new_name.clone();
-    let name2 = name.clone();
-    blocking(move || {
-        let dir = saves_dir(&inst);
-        let src = dir.join(&name2);
-        if !src.is_file() {
-            return Err(AppError::msg("Save not found."));
-        }
-        let dest = dir.join(&nn);
-        if dest.exists() {
-            return Err(AppError::msg("A save with that name already exists."));
-        }
-        std::fs::rename(&src, &dest)?;
-        Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "rename-save", &format!("{name} → {new_name}"));
+    })
+    .await?;
+    state.history.audit(Some(&id), "delete-world", &name);
     Ok(())
 }
 
@@ -1124,22 +1143,20 @@ pub async fn reset_world(state: St<'_>, id: String) -> AppResult<()> {
         return Err(AppError::msg("Stop the server before resetting the world."));
     }
     blocking(move || {
-        let dir = saves_dir(&inst);
-        if dir.is_dir() {
-            std::fs::remove_dir_all(&dir)?;
+        let live = live_world(&inst);
+        let mut to_quarantine = vec![live.clone()];
+        for side in ["-wal", "-shm"] {
+            let p = PathBuf::from(format!("{}{}", live.display(), side));
+            if p.exists() {
+                to_quarantine.push(p);
+            }
         }
-        // Also remove the live DB.
-        let db = inst.db_path();
-        if db.exists() {
-            std::fs::remove_file(&db)?;
-        }
-        let wal = PathBuf::from(format!("{}-wal", db.display()));
-        if wal.exists() {
-            let _ = std::fs::remove_file(&wal);
-        }
+        to_quarantine.extend(world_snapshots(&inst));
+        backup::quarantine_files(&inst, &to_quarantine, "reset-world")?;
         Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "reset-world", "all saves removed");
+    })
+    .await?;
+    state.history.audit(Some(&id), "reset-world", "world + snapshots quarantined");
     Ok(())
 }
 

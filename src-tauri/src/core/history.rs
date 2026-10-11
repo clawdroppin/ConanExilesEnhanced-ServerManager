@@ -98,6 +98,17 @@ pub struct PlayerSummary {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ServerStats {
+    pub total_sessions: i64,
+    pub unique_players: i64,
+    pub total_playtime_secs: i64,
+    pub longest_session_secs: i64,
+    pub first_seen: Option<i64>,
+    pub last_seen: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ModerationRow {
     pub id: i64,
     pub user_id: String,
@@ -311,6 +322,34 @@ impl History {
                 .query_map([limit], |r| Ok(AuditRow { id: r.get(0)?, ts: r.get(1)?, actor: r.get(2)?, server_id: r.get(3)?, action: r.get(4)?, detail: r.get(5)? }))?
                 .collect();
             v
+        })
+    }
+
+    /// Lifetime stats for a server, aggregated from the sessions table.
+    /// Returns `None` when the server has no recorded sessions yet.
+    pub fn server_stats(&self, server_id: &str) -> Option<ServerStats> {
+        self.with(|c| {
+            c.query_row(
+                "SELECT COUNT(*),
+                        COUNT(DISTINCT user_id),
+                        COALESCE(SUM(COALESCE(left_at, ?2) - joined_at), 0) / 1000,
+                        COALESCE(MAX(COALESCE(left_at, ?2) - joined_at), 0) / 1000,
+                        MIN(joined_at),
+                        MAX(COALESCE(left_at, ?2))
+                 FROM sessions WHERE server_id = ?1",
+                params![server_id, now()],
+                |r| {
+                    Ok(ServerStats {
+                        total_sessions: r.get(0)?,
+                        unique_players: r.get(1)?,
+                        total_playtime_secs: r.get(2)?,
+                        longest_session_secs: r.get(3)?,
+                        first_seen: Some(r.get(4)?),
+                        last_seen: Some(r.get(5)?),
+                    })
+                },
+            )
+            .optional()
         })
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Crown, Gamepad2, Globe2, IdCard, Network, Palette, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { api } from '@/lib/ipc';
+import { api, errMsg } from '@/lib/ipc';
 import { BEACON_OFFSET, beaconPort, netInfo } from '@/lib/net';
 import { useMaps } from '@/lib/useMaps';
 import { SERVER_COLORS } from '@/lib/colors';
@@ -19,6 +19,91 @@ export const PLATFORMS: { value: PlatformPolicy; label: string; hint: string }[]
   { value: 'Xbox', label: 'Xbox', hint: 'Xbox players' },
   { value: 'Nintendo', label: 'Nintendo', hint: 'Nintendo Switch players' },
 ];
+
+const SERVER_REGIONS = [
+  { value: '0', label: 'Europe' },
+  { value: '1', label: 'North America' },
+  { value: '2', label: 'Asia' },
+  { value: '3', label: 'Australia / Oceania' },
+  { value: '4', label: 'South America' },
+  { value: '5', label: 'Japan' },
+];
+
+function ServerRegion({ id }: { id: string }) {
+  const toast = useApp((s) => s.toast);
+  const [value, setValue] = useState<string>('0');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    api
+      .readGameRules(id)
+      .then((r) => {
+        const v = r.values.serverRegion;
+        if (v !== undefined) setValue(v);
+      })
+      .catch(() => {});
+  }, [id]);
+  const change = async (v: string) => {
+    setValue(v);
+    setBusy(true);
+    try {
+      await api.applyGameRules(id, { serverRegion: v }, {}, ['serverRegion']);
+      toast('success', `Server region set to ${SERVER_REGIONS.find((r) => r.value === v)?.label ?? v}`, id);
+    } catch (e) {
+      toast('error', errMsg(e), id);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <FieldRow
+      label="Server region"
+      description="Where the server appears in the in-game server browser (serverRegion). Pick the region closest to your players so they find you faster. Applies on the next start."
+    >
+      <Select value={value} disabled={busy} onChange={(e) => void change(e.target.value)}>
+        {SERVER_REGIONS.map((r) => (
+          <option key={r.value} value={r.value}>
+            {r.label}
+          </option>
+        ))}
+      </Select>
+    </FieldRow>
+  );
+}
+
+function BattlEye({ id }: { id: string }) {
+  const toast = useApp((s) => s.toast);
+  const [enabled, setEnabled] = useState(true);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    api
+      .readGameRules(id)
+      .then((r) => {
+        const v = r.values.IsBattlEyeEnabled;
+        if (v !== undefined) setEnabled(v !== 'False' && v !== 'false' && v !== '0');
+      })
+      .catch(() => {});
+  }, [id]);
+  const change = async (v: boolean) => {
+    setEnabled(v);
+    setBusy(true);
+    try {
+      await api.applyGameRules(id, { IsBattlEyeEnabled: v ? 'True' : 'False' }, {}, ['IsBattlEyeEnabled']);
+      toast('success', v ? 'BattlEye anticheat enabled' : 'Server will start without anticheat (BattlEye)', id);
+    } catch (e) {
+      toast('error', errMsg(e), id);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <FieldRow
+      label="BattlEye anticheat"
+      description="BattlEye cheat protection (IsBattlEyeEnabled in ServerSettings.ini). Funcom requires it on official servers; private servers may run without it – some mods and tools need it off. Applies on the next start."
+    >
+      <Toggle checked={enabled} disabled={busy} onChange={(v) => void change(v)} />
+    </FieldRow>
+  );
+}
 
 export const OWNER_RE = /^[0-9a-f]{32}$/i;
 
@@ -101,6 +186,18 @@ export function Settings({ id }: { id: string }) {
         <FieldRow label="World password" description="Players need it to join. Leave empty for a public world. Overrides any password stored in the world save.">
           <SecretInput value={s.worldPassword} onChange={(v) => patch((d) => void (d.ini.worldPassword = v))} placeholder="Open to everyone" generate />
         </FieldRow>
+        <FieldRow
+          label="Message of the day (MOTD)"
+          description="Shown to players in the server browser and on the join screen. Can be up to ~100 characters. If the server is running, it updates live – no restart needed."
+          stacked
+        >
+          <TextArea
+            value={draft.identity?.motd ?? ''}
+            rows={2}
+            placeholder="Welcome to our world! Be nice, build big."
+            onChange={(e) => patch((d) => void (d.identity.motd = e.target.value))}
+          />
+        </FieldRow>
         <FieldRow label="Platforms allowed" description="PlatformPolicy – which platforms can join this server.">
           <Select value={s.platformPolicy} onChange={(e) => patch((d) => void (d.ini.platformPolicy = e.target.value))}>
             {PLATFORMS.map((p) => (
@@ -110,6 +207,8 @@ export function Settings({ id }: { id: string }) {
             ))}
           </Select>
         </FieldRow>
+        <ServerRegion id={id} />
+        <BattlEye id={id} />
         <FieldRow
           label="Max players"
           description="Player cap. Funcom supports up to 100 per dedicated server; plan on 2 GB RAM + 1 GB per player."

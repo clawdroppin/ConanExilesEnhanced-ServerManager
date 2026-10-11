@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Archive, ArrowRight, CalendarClock, Check, CircleDashed, Copy, Cpu, Globe2, HardDrive, KeyRound, MemoryStick, Network, Search, Terminal, Users } from 'lucide-react';
 import { api } from '@/lib/ipc';
 import { cn } from '@/lib/cn';
-import { ago, bytes, pct, until } from '@/lib/format';
+import { ago, bytes, dateTime, duration, pct, until } from '@/lib/format';
 import { lineLevel, useLogLines, useServerHistory } from '@/lib/live';
 import { copy } from '@/lib/shell';
 import { beaconPort, netInfo } from '@/lib/net';
-import type { NetInfo } from '@/lib/types';
+import type { NetInfo, ServerStats } from '@/lib/types';
 import { useApp, useInstance, useStatus } from '@/store/app';
 import { Sparkline } from '@/components/charts/Charts';
 import { Button } from '@/components/ui/Button';
@@ -52,6 +52,10 @@ export function Overview({ id }: { id: string }) {
   useEffect(() => {
     api.firewallState(id).then((f) => setFwOk((f.portsOk || f.programRule) && f.blockedBy.length === 0)).catch(() => setFwOk(null));
   }, [id, st?.installedBuild]);
+  const [stats, setStats] = useState<ServerStats | null>(null);
+  useEffect(() => {
+    api.serverStats(id).then(setStats).catch(() => setStats(null));
+  }, [id, st?.state]);
 
   const win = hist.slice(-120);
   const last = hist[hist.length - 1];
@@ -211,6 +215,37 @@ export function Overview({ id }: { id: string }) {
                 </button>
               )}
             </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-2 text-[11.5px] font-medium tracking-wide text-fg-3 uppercase">
+              <Users className="size-3.5" /> Server stats
+            </div>
+            {stats && stats.totalSessions > 0 ? (
+              <div className="mt-2 space-y-1.5 text-[12.5px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-3">Total playtime</span>
+                  <span className="font-mono text-fg">{duration(stats.totalPlaytimeSecs)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-3">Longest session</span>
+                  <span className="font-mono text-fg">{duration(stats.longestSessionSecs)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-3">Unique players</span>
+                  <span className="font-mono text-fg">{stats.uniquePlayers}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-3">Sessions</span>
+                  <span className="font-mono text-fg">{stats.totalSessions}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-fg-3">First / last seen</span>
+                  <span className="font-mono text-[11.5px] text-fg-2">{dateTime(stats.firstSeen)} – {dateTime(stats.lastSeen)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 text-[12.5px] text-fg-4">No sessions recorded yet – stats appear once players have joined.</div>
+            )}
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-2 text-[11.5px] font-medium tracking-wide text-fg-3 uppercase">

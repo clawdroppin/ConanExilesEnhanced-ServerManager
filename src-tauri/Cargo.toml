@@ -1,6 +1,6 @@
 [package]
 name = "conan-enhanced-server-manager"
-version = "1.0.2"
+version = "1.0.4"
 description = "Conan Exiles: Enhanced dedicated server manager"
 license = "MIT"
 authors = ["clawdroppin"]

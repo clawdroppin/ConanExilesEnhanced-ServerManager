@@ -120,6 +120,25 @@ export function Console({ id }: { id: string }) {
     return { e, w };
   }, [base]);
 
+  const sendCmd = async () => {
+    if (!cmd.trim() || cmdBusy) return;
+    const c = cmd.trim();
+    setCmd('');
+    setCmdBusy(true);
+    setCmdHistory((h) => [c, ...h].slice(0, 50));
+    setCmdHistIdx(-1);
+    pushLines(id, 'manager', [`> ${c}`], Date.now());
+    try {
+      const resp = await api.rcon(id, c);
+      const respLines = resp.split(/\r?\n/).filter(Boolean);
+      pushLines(id, 'rcon', respLines.length ? respLines : ['(no output)'], Date.now());
+    } catch (err) {
+      pushLines(id, 'rcon', [errMsg(err)], Date.now());
+    } finally {
+      setCmdBusy(false);
+    }
+  };
+
   const openFile = async (path: string) => {
     if (!path) return setFileView(null);
     try {
@@ -207,24 +226,10 @@ export function Console({ id }: { id: string }) {
         <input
           value={cmd}
           onChange={(e) => setCmd(e.target.value)}
-          onKeyDown={async (e) => {
+          onKeyDown={(e) => {
             if (e.key === 'Enter' && cmd.trim() && !cmdBusy) {
               e.preventDefault();
-              const c = cmd.trim();
-              setCmd('');
-              setCmdBusy(true);
-              setCmdHistory((h) => [c, ...h].slice(0, 50));
-              setCmdHistIdx(-1);
-              pushLines(id, 'manager', [`> ${c}`], Date.now());
-              try {
-                const resp = await api.rcon(id, c);
-                const respLines = resp.split(/\r?\n/).filter(Boolean);
-                pushLines(id, 'rcon', respLines.length ? respLines : ['(no output)'], Date.now());
-              } catch (err) {
-                pushLines(id, 'rcon', [errMsg(err)], Date.now());
-              } finally {
-                setCmdBusy(false);
-              }
+              void sendCmd();
             } else if (e.key === 'ArrowUp') {
               e.preventDefault();
               if (cmdHistory.length === 0) return;
@@ -244,24 +249,7 @@ export function Console({ id }: { id: string }) {
           className="h-8 flex-1 rounded-md border border-line bg-bg/80 px-3 font-mono text-[12px] text-fg placeholder:text-fg-4 focus:border-accent focus:outline-none"
         />
         <button
-          onClick={async () => {
-            if (!cmd.trim() || cmdBusy) return;
-            const c = cmd.trim();
-            setCmd('');
-            setCmdBusy(true);
-            setCmdHistory((h) => [c, ...h].slice(0, 50));
-            setCmdHistIdx(-1);
-            pushLines(id, 'manager', [`> ${c}`], Date.now());
-            try {
-              const resp = await api.rcon(id, c);
-              const respLines = resp.split(/\r?\n/).filter(Boolean);
-              pushLines(id, 'rcon', respLines.length ? respLines : ['(no output)'], Date.now());
-            } catch (err) {
-              pushLines(id, 'rcon', [errMsg(err)], Date.now());
-            } finally {
-              setCmdBusy(false);
-            }
-          }}
+          onClick={() => void sendCmd()}
           disabled={!cmd.trim() || cmdBusy}
           className="flex h-8 items-center gap-1.5 rounded-md bg-accent px-3 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >

@@ -795,10 +795,11 @@ pub struct ListEntry {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SaveFile {
+pub struct WorldSnapshot {
     pub name: String,
     pub path: String,
     pub size: u64,
     pub modified: i64,
+    /// True for the live world (`game_0.db`); false for a rolling `game_0_backup_N.db` snapshot.
     pub active: bool,
 }

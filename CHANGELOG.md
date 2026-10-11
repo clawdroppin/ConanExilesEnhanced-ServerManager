@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] – 2026-10-11
+
+### Added
+- **MOTD field** in Settings → Listing – set the server's Message of the Day (applied live via RCON while running)
+- **Server stats card** on the Overview tab – total playtime, longest session, unique players, session count and first/last seen, tracked across restarts
+- **BattlEye anticheat toggle** in Settings → Listing – start the server without anticheat (writes `IsBattlEyeEnabled` to `ServerSettings.ini`, applies on next start)
+
+### Fixed
+- **Config sync**: `DedicatedServer.ini` values were being written to the wrong INI section and silently lost on save – now read and written under the correct `/Script/Dominion.DedicatedServerSettings` section
+- **Console**: duplicated RCON send logic consolidated – fewer edge cases when sending commands quickly
+
+## [1.0.3] – 2026-10-11
+
+### Fixed
+- **Worlds tab**: world list now populates from the correct path; delete fully removes the saved world (quarantined for recovery)
+- **Config tabs**: "unknown config file" error resolved – all 5 real config files (including `DedicatedServer.ini`) are now recognized
+- **Mod paste**: added retry on transient Steam API failures so the first paste no longer silently skips mods
+
+### Added
+- **Server region** dropdown in Settings (Europe / North America / Asia / Australia / South America / Japan) – writes `serverRegion` to `[ServerSettings]`
+
 ## [1.0.2] – 2026-10-11
 
 ### Added

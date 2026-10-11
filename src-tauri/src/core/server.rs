@@ -149,23 +149,24 @@ pub fn sync_ini(inst: &ServerInstance) -> AppResult<Vec<String>> {
     // DedicatedServer.ini – owner/world/platform settings.
     let path = inst.dedicated_ini();
     let mut d = IniDoc::parse(&ini::read_file(&path).unwrap_or_default());
+    const DS: &str = "/Script/Dominion.DedicatedServerSettings";
     if !inst.ini.owner_id.is_empty() {
-        d.set("DedicatedServerSettings", "OwnerId", &inst.ini.owner_id);
+        d.set(DS, "OwnerId", &inst.ini.owner_id);
     }
     if !inst.ini.server_name.is_empty() {
-        d.set("DedicatedServerSettings", "ServerName", &inst.ini.server_name);
+        d.set(DS, "ServerName", &inst.ini.server_name);
     }
     if !inst.ini.default_world_name.is_empty() {
-        d.set("DedicatedServerSettings", "DefaultWorldName", &inst.ini.default_world_name);
+        d.set(DS, "DefaultWorldName", &inst.ini.default_world_name);
     }
     if !inst.ini.admin_password.is_empty() {
-        d.set("DedicatedServerSettings", "AdminPassword", &inst.ini.admin_password);
+        d.set(DS, "AdminPassword", &inst.ini.admin_password);
     }
-    d.set("DedicatedServerSettings", "WorldPassword", &inst.ini.world_password);
+    d.set(DS, "WorldPassword", &inst.ini.world_password);
     if !inst.ini.platform_policy.is_empty() {
-        d.set("DedicatedServerSettings", "PlatformPolicy", &inst.ini.platform_policy);
+        d.set(DS, "PlatformPolicy", &inst.ini.platform_policy);
     }
-    d.set("DedicatedServerSettings", "bAllowSendingCrashDumps", if inst.ini.allow_crash_dumps { "True" } else { "False" });
+    d.set(DS, "bAllowSendingCrashDumps", if inst.ini.allow_crash_dumps { "True" } else { "False" });
     ini::write_file(&path, &d.to_text())?;
 
     Ok(notes)
@@ -226,25 +227,26 @@ pub fn read_ini_into(inst: &mut ServerInstance) {
     }
     // Read DedicatedServer.ini for owner/world settings.
     let d = IniDoc::parse(&ini::read_file(&inst.dedicated_ini()).unwrap_or_default());
-    if let Some(v) = d.get("DedicatedServerSettings", "OwnerId").filter(|v| !v.trim().is_empty()) {
+    const DS: &str = "/Script/Dominion.DedicatedServerSettings";
+    if let Some(v) = d.get(DS, "OwnerId").filter(|v| !v.trim().is_empty()) {
         inst.ini.owner_id = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "ServerName").filter(|v| !v.trim().is_empty()) {
+    if let Some(v) = d.get(DS, "ServerName").filter(|v| !v.trim().is_empty()) {
         inst.ini.server_name = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "DefaultWorldName").filter(|v| !v.trim().is_empty()) {
+    if let Some(v) = d.get(DS, "DefaultWorldName").filter(|v| !v.trim().is_empty()) {
         inst.ini.default_world_name = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "AdminPassword").filter(|v| !v.trim().is_empty()) {
+    if let Some(v) = d.get(DS, "AdminPassword").filter(|v| !v.trim().is_empty()) {
         inst.ini.admin_password = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "WorldPassword") {
+    if let Some(v) = d.get(DS, "WorldPassword") {
         inst.ini.world_password = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "PlatformPolicy").filter(|v| !v.trim().is_empty()) {
+    if let Some(v) = d.get(DS, "PlatformPolicy").filter(|v| !v.trim().is_empty()) {
         inst.ini.platform_policy = v.trim().to_string();
     }
-    if let Some(v) = d.get("DedicatedServerSettings", "bAllowSendingCrashDumps") {
+    if let Some(v) = d.get(DS, "bAllowSendingCrashDumps") {
         inst.ini.allow_crash_dumps = v.trim() == "True" || v.trim().eq_ignore_ascii_case("true");
     }
 }

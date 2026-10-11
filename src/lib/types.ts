@@ -432,7 +432,7 @@ export interface DiskUsage {
   mods: number;
 }
 
-export type ConfigFileName = 'ServerSettings.ini' | 'Engine.ini' | 'Game.ini' | 'ModHttp.ini' | 'DedicatedServer.ini' | 'GameUserSettings.ini';
+export type ConfigFileName = 'ServerSettings.ini' | 'DedicatedServer.ini' | 'Engine.ini' | 'Game.ini' | 'ModHttp.ini';
 
 export interface GameRules {
   exists: boolean;
@@ -561,6 +561,15 @@ export interface PlayerSummary {
   bans: number;
 }
 
+export interface ServerStats {
+  totalSessions: number;
+  uniquePlayers: number;
+  totalPlaytimeSecs: number;
+  longestSessionSecs: number;
+  firstSeen: number | null;
+  lastSeen: number | null;
+}
+
 export interface ModerationRow {
   id: number;
   userId: string;
@@ -645,11 +654,12 @@ export interface ListEntry {
 
 export type PlatformPolicy = 'Crossplay' | 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | string;
 
-export interface SaveFile {
+export interface WorldSnapshot {
   name: string;
   path: string;
   size: number;
   modified: number;
+  /** True for the live world (game_0.db); false for a rolling game_0_backup_N.db snapshot. */
   active: boolean;
 }
 

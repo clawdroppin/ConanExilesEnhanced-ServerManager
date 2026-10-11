@@ -18,10 +18,11 @@ import { Callout } from '@/components/ui/Surface';
 import { confirm } from '@/components/ui/Dialog';
 
 const FILES: { name: ConfigFileName; hint: string }[] = [
-  { name: 'DedicatedServer.ini', hint: 'Server identity, passwords, admin/ban lists' },
+  { name: 'ServerSettings.ini', hint: 'Game rules, MOTD, join/admin passwords, mod list' },
+  { name: 'DedicatedServer.ini', hint: 'Server identity, owner/world, platform, admin/ban lists' },
   { name: 'Engine.ini', hint: 'Engine & network tuning' },
   { name: 'Game.ini', hint: 'Game session (MaxPlayers)' },
-  { name: 'GameUserSettings.ini', hint: 'Engine user settings' },
+  { name: 'ModHttp.ini', hint: 'Per-mod HTTP origin approvals' },
 ];
 
 const theme = EditorView.theme(

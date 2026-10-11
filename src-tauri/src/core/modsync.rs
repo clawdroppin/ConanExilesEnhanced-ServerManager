@@ -24,7 +24,16 @@ pub async fn workshop_info(state: &AppState, ids: &[String], fresh: bool) -> Has
         }
     }
     if !need.is_empty() {
-        match workshop::details(&state.http, &need).await {
+        // Retry once on transient failure (Steam API can be flaky).
+        let result = match workshop::details(&state.http, &need).await {
+            Ok(items) => Ok(items),
+            Err(e1) => {
+                tracing::warn!("Workshop details failed (retrying): {e1}");
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                workshop::details(&state.http, &need).await
+            }
+        };
+        match result {
             Ok(items) => {
                 for w in items {
                     if let Ok(j) = serde_json::to_string(&w) {
@@ -34,7 +43,7 @@ pub async fn workshop_info(state: &AppState, ids: &[String], fresh: bool) -> Has
                 }
             }
             Err(e) => {
-                tracing::warn!("Workshop details failed: {e}");
+                tracing::warn!("Workshop details failed after retry: {e}");
                 // Fall back to stale cache rather than showing nothing.
                 for id in need {
                     if let Some(w) = state.history.cached_workshop(&id, i64::MAX / 2).and_then(|j| serde_json::from_str(&j).ok()) {

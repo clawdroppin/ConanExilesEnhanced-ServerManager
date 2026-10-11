@@ -1,23 +1,14 @@
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/ipc';
 import { useInstance, useStatus } from '@/store/app';
 
 /**
- * The name players search for in Worlds → Public. That's the loaded world's save slot (the .sav
- * file name), which equals Default World Name only for a world the server generated itself –
- * an imported world keeps its own name.
+ * The name players see in the server browser (Worlds → Public). For Conan Exiles that is the
+ * server's ServerName (Engine.ini [OnlineSubsystem] ServerName). While the server is running we
+ * prefer the slot name it reports over the network, since that is exactly what the browser shows.
  */
 export function useSearchName(id: string): string {
   const inst = useInstance(id);
   const st = useStatus(id);
-  const [active, setActive] = useState<string | null>(null);
   const live = st?.state === 'running' || st?.state === 'starting';
-  useEffect(() => {
-    api
-      .listSaves(id)
-      .then((s) => setActive(s.find((x) => x.active)?.name.replace(/\.sav$/i, '') ?? null))
-      .catch(() => setActive(null));
-  }, [id, st?.state]);
   if (live && st?.session?.SlotName) return st.session.SlotName;
-  return active ?? inst?.ini?.defaultWorldName ?? '';
+  return inst?.identity?.serverName || inst?.ini?.serverName || inst?.ini?.defaultWorldName || '';
 }
