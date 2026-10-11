@@ -423,7 +423,13 @@ export function installDevMock() {
     rollback_mod: () => undefined,
     set_http_origin: () => undefined,
     workshop_lookup: () => [],
-    workshop_search: () => [],
+    workshop_search: (args) => {
+      const text = String(args.text ?? '');
+      return [
+        { id: '3054029483', found: true, title: text ? `Sample Mod: ${text}` : 'Sample Base Building Mod', previewUrl: '', fileSize: 12345678, timeCreated: now - 86400000 * 30, timeUpdated: now - 86400000 * 3, tags: [], subscriptions: 1234, creator: 'Sample Author', banned: false, forConan: true, description: 'A sample mod for dev testing.' },
+        { id: '3054029484', found: true, title: 'Another Sample Mod', previewUrl: '', fileSize: 8765432, timeCreated: now - 86400000 * 60, timeUpdated: now - 86400000, tags: [], subscriptions: 567, creator: 'Other Author', banned: false, forConan: true, description: 'Another sample mod for dev testing.' },
+      ];
+    },
     save_mod_profile: () => ({ id: 'p1', name: 'Test', createdAt: Date.now() }),
     apply_mod_profile: () => undefined,
     delete_mod_profile: () => undefined,

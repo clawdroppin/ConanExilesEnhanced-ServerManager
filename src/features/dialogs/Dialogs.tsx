@@ -9,7 +9,7 @@ import { useApp } from '@/store/app';
 import { discardDraft } from '@/features/server/draft';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Checkbox, FieldRow, Input, Label, Segmented, Select, Toggle } from '@/components/ui/Field';
+import { Checkbox, FieldRow, Input, Label, SecretInput, Segmented, Select, Toggle } from '@/components/ui/Field';
 import { Badge, Callout } from '@/components/ui/Surface';
 
 // --------------------------------------------------------------------------- import
@@ -494,6 +494,13 @@ export function AppSettingsDialog() {
               />
             ))}
           </div>
+        </FieldRow>
+        <FieldRow
+          label="Steam Web API key"
+          description="Optional. Powers the Workshop search on the Mods tab. Create a free key at steamcommunity.com/dev/apikey. Stored encrypted on this machine."
+          stacked
+        >
+          <SecretInput value={d.steamApiKey} onChange={(v) => setD({ ...d, steamApiKey: v })} placeholder="Paste your Steam Web API key" />
         </FieldRow>
         <FieldRow label="Live update rate" description="How often performance and status refresh.">
           <Select value={String(d.telemetryIntervalMs)} onChange={(e) => setD({ ...d, telemetryIntervalMs: +e.target.value })}>

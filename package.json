@@ -1,7 +1,7 @@
 {
   "name": "conan-exiles-enhanced-server-manager",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Conan Exiles: Enhanced dedicated server manager",
   "license": "MIT",
