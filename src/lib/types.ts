@@ -33,7 +33,6 @@ export interface Identity {
 export interface LaunchSettings {
   port: number;
   queryPort: number;
-  beaconPort: number;
   maxPlayers: number;
   multihome: string;
   multihomeHttp: string;
@@ -152,15 +151,8 @@ export interface AutomationSettings {
 }
 
 export interface DedicatedSettings {
-  ownerId: string;
-  serverName: string;
-  defaultWorldName: string;
   /** Map the server runs (Engine.ini `ServerDefaultMap`). Empty = the game's default map. */
   defaultMap: string;
-  adminPassword: string;
-  worldPassword: string;
-  platformPolicy: string;
-  allowCrashDumps: boolean;
 }
 
 export interface ServerInstance {
@@ -432,7 +424,7 @@ export interface DiskUsage {
   mods: number;
 }
 
-export type ConfigFileName = 'ServerSettings.ini' | 'DedicatedServer.ini' | 'Engine.ini' | 'Game.ini' | 'ModHttp.ini';
+export type ConfigFileName = 'ServerSettings.ini' | 'Engine.ini' | 'Game.ini' | 'ModHttp.ini';
 
 export interface GameRules {
   exists: boolean;
@@ -646,13 +638,12 @@ export interface SqlTable {
   rows: string[][];
 }
 
+/** A line of Saved/blacklist.txt or Saved/whitelist.txt (`<id>[:<name>]`). */
 export interface ListEntry {
-  list: string;
-  raw: string;
-  fields: [string, string][];
+  list: 'ban' | 'whitelist';
+  id: string;
+  name: string;
 }
-
-export type PlatformPolicy = 'Crossplay' | 'PC' | 'PlayStation' | 'Xbox' | 'Nintendo' | string;
 
 export interface WorldSnapshot {
   name: string;

@@ -4,7 +4,7 @@ import { AlertTriangle, Clock, Loader2, RotateCw, Save, Undo2, Users } from 'luc
 import { cn } from '@/lib/cn';
 import { serverColor } from '@/lib/colors';
 import { duration } from '@/lib/format';
-import { beaconPort } from '@/lib/net';
+import { pingerPort } from '@/lib/net';
 import { useApp, useInstance, useStatus, type ViewId } from '@/store/app';
 import { Button } from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Surface';
@@ -19,6 +19,7 @@ import { Players } from './views/Players';
 import { Worlds } from './views/Worlds';
 import { Backups } from './views/Backups';
 import { Settings } from './views/Settings';
+import { GameRules } from './views/GameRules';
 import { Launch } from './views/Launch';
 import { Automation } from './views/Automation';
 import { ConfigFiles } from './views/ConfigFiles';
@@ -35,6 +36,7 @@ const COMPONENTS: Record<ViewId, ComponentType<{ id: string }>> = {
   worlds: Worlds,
   backups: Backups,
   settings: Settings,
+  rules: GameRules,
   launch: Launch,
   automation: Automation,
   config: ConfigFiles,
@@ -140,7 +142,7 @@ export function Workspace({ id }: { id: string }) {
             </div>
             <div className="mt-0.5 flex items-center gap-3 text-[11.5px] text-fg-3">
               <span className="font-mono">
-                {inst.ini?.defaultWorldName ?? '—'} · UDP {inst.launch.port} / {beaconPort(inst)}
+                {inst.identity?.serverName || '—'} · UDP {inst.launch.port}/{pingerPort(inst)} · query {inst.launch.queryPort}
               </span>
               {st?.startedAt && (st.state === 'running' || st.state === 'starting') && (
                 <span className="flex items-center gap-1">

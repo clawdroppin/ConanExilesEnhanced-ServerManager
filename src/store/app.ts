@@ -16,6 +16,7 @@ export type ViewId =
   | 'ports'
   | 'files'
   | 'settings'
+  | 'rules'
   | 'launch';
 
 export interface Toast {

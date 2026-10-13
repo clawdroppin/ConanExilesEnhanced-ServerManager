@@ -177,9 +177,9 @@ export function ImportDialog() {
           </div>
           <div>
             <Label>Name (optional)</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Uses the Server Name from DedicatedServer.ini" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Uses the ServerName from Engine.ini" />
           </div>
-          <Callout tone="info">Settings are read from the existing DedicatedServer.ini and nothing is moved or overwritten until you save or start the server.</Callout>
+          <Callout tone="info">Name, passwords, RCON and mod list are read from the existing ServerSettings.ini, Engine.ini, Game.ini and modlist.txt. Nothing is moved; your game rules stay exactly as they are.</Callout>
         </div>
       )}
       {error && <Callout tone="err" className="mt-4">{error}</Callout>}

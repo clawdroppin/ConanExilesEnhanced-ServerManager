@@ -68,7 +68,7 @@ export function CommandPalette() {
                     <Home /> Dashboard
                   </Command.Item>
                   {instances.map((i) => (
-                    <Command.Item key={i.id} value={`open ${i.name} ${i.ini?.defaultWorldName ?? ''}`} className={item} onSelect={() => run(() => openServer(i.id))}>
+                    <Command.Item key={i.id} value={`open ${i.name} ${i.identity?.serverName ?? ''}`} className={item} onSelect={() => run(() => openServer(i.id))}>
                       <Server /> {i.name}
                       <span className="ml-auto flex items-center gap-1.5 text-[11px] text-fg-4">
                         <StatusDot state={statuses[i.id]?.state} />

@@ -16,6 +16,14 @@ enum Line {
     Other(String),
 }
 
+/// One key's new values (all occurrences, in order). Empty `values` = the key was removed.
+#[derive(Debug, Clone, PartialEq)]
+pub struct IniChange {
+    pub section: String,
+    pub key: String,
+    pub values: Vec<String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct IniDoc {
     lines: Vec<Line>,
@@ -169,6 +177,73 @@ impl IniDoc {
         before != self.lines.len()
     }
 
+    /// Remove every line whose key matches exactly (prefix included: `+X` ≠ `X`).
+    fn remove_exact(&mut self, section: &str, key: &str) {
+        let Some((s, e)) = self.section_range(section) else { return };
+        let mut i = e;
+        while i > s + 1 {
+            i -= 1;
+            if matches!(&self.lines[i], Line::Pair { key: k, .. } if k.eq_ignore_ascii_case(key)) {
+                self.lines.remove(i);
+            }
+        }
+    }
+
+    /// Every key with all of its values, per section, in file order. Keys keep their array prefix,
+    /// so `+AdminList` and `AdminList` are different entries.
+    fn entries(&self) -> Vec<(String, String, Vec<String>)> {
+        let mut out: Vec<(String, String, Vec<String>)> = vec![];
+        let mut section = String::new();
+        for l in &self.lines {
+            match l {
+                Line::Section(n, _) => section = n.clone(),
+                Line::Pair { key, value, .. } => {
+                    match out.iter_mut().find(|(s, k, _)| s.eq_ignore_ascii_case(&section) && k.eq_ignore_ascii_case(key)) {
+                        Some(e) => e.2.push(value.clone()),
+                        None => out.push((section.clone(), key.clone(), vec![value.clone()])),
+                    }
+                }
+                Line::Other(_) => {}
+            }
+        }
+        out
+    }
+
+    /// Key-level changes that turn `self` into `edited` (comments/blank lines are not tracked).
+    pub fn diff(&self, edited: &IniDoc) -> Vec<IniChange> {
+        let base = self.entries();
+        let new = edited.entries();
+        let mut out = vec![];
+        for (s, k, v) in &new {
+            let old = base.iter().find(|(bs, bk, _)| bs.eq_ignore_ascii_case(s) && bk.eq_ignore_ascii_case(k));
+            if old.map(|o| &o.2) != Some(v) {
+                out.push(IniChange { section: s.clone(), key: k.clone(), values: v.clone() });
+            }
+        }
+        for (s, k, _) in &base {
+            if !new.iter().any(|(ns, nk, _)| ns.eq_ignore_ascii_case(s) && nk.eq_ignore_ascii_case(k)) {
+                out.push(IniChange { section: s.clone(), key: k.clone(), values: vec![] });
+            }
+        }
+        out
+    }
+
+    /// Apply key-level changes on top of whatever the file holds now (a 3-way merge: keys the
+    /// change set doesn't mention keep their current – possibly server-written – values).
+    pub fn apply_changes(&mut self, changes: &[IniChange]) {
+        for c in changes {
+            let single = c.values.len() == 1 && base_key(&c.key) == c.key;
+            if single {
+                self.set(&c.section, &c.key, &c.values[0]);
+                continue;
+            }
+            self.remove_exact(&c.section, &c.key);
+            for v in &c.values {
+                self.add(&c.section, &c.key, v);
+            }
+        }
+    }
+
     /// Remove one specific array entry whose value matches exactly.
     pub fn remove_value(&mut self, section: &str, key: &str, value: &str) -> bool {
         let Some((s, e)) = self.section_range(section) else { return false };
@@ -237,6 +312,23 @@ mod tests {
     use super::*;
 
     const SAMPLE: &str = "; comment\r\n[/Script/Dominion.DedicatedServerSettings]\r\nOwnerId=abc\r\nServerName=Old\r\n+AdminList=(Id=\"x\")\r\n+AdminList=(Id=\"y\")\r\n\r\n[Other]\r\nA=1\r\n";
+
+    #[test]
+    fn diff_then_merge_keeps_concurrent_server_edits() {
+        let base = IniDoc::parse("[ServerSettings]\r\nA=1\r\nB=2\r\nDropEquipmentOnDeath=1\r\n+L=x\r\n");
+        // The user edits A and the array while the server is running...
+        let edited = IniDoc::parse("[ServerSettings]\r\nA=5\r\nB=2\r\nDropEquipmentOnDeath=1\r\n+L=x\r\n+L=y\r\nC=3\r\n");
+        let changes = base.diff(&edited);
+        assert_eq!(changes.len(), 3);
+        // ...meanwhile an admin changes DropEquipmentOnDeath in-game and removes B.
+        let mut now = IniDoc::parse("[ServerSettings]\r\nA=1\r\nDropEquipmentOnDeath=0\r\n+L=x\r\n");
+        now.apply_changes(&changes);
+        assert_eq!(now.to_text(), "[ServerSettings]\r\nA=5\r\nDropEquipmentOnDeath=0\r\n+L=x\r\n+L=y\r\nC=3\r\n");
+        // Removals carry over too.
+        let gone = IniDoc::parse("[ServerSettings]\r\nA=5\r\n").diff(&IniDoc::parse("[ServerSettings]\r\n"));
+        now.apply_changes(&gone);
+        assert!(now.get("ServerSettings", "A").is_none());
+    }
 
     #[test]
     fn round_trip_is_lossless() {

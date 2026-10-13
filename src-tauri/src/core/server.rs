@@ -101,7 +101,16 @@ pub fn sync_ini(inst: &ServerInstance) -> AppResult<Vec<String>> {
     std::fs::create_dir_all(inst.config_dir())?;
 
     let path = inst.settings_path();
-    let mut s = IniDoc::parse(&ini::read_file(&path)?);
+    let text = ini::read_file(&path)?;
+    let mut s = IniDoc::parse(&text);
+    if text.trim().is_empty() {
+        // A brand-new file. Without ConfigVersion the server treats it as a version-2 file and runs
+        // every settings upgrade on it, resetting dozens of rules to their defaults on the first
+        // start ("Upgrading C++ serversettings from version 2 to version 13" in the log) – including
+        // preset rules written before that start. Stamp the versions a fresh 3.0.1 server writes.
+        s.set(SETTINGS_SECTION, "ConfigVersion", FRESH_CONFIG_VERSION);
+        s.set(SETTINGS_SECTION, "BlueprintConfigVersion", FRESH_BLUEPRINT_CONFIG_VERSION);
+    }
     s.set(SETTINGS_SECTION, "AdminPassword", &inst.identity.admin_password);
     s.set(SETTINGS_SECTION, "ServerPassword", &inst.identity.server_password);
     s.set(SETTINGS_SECTION, "ServerMessageOfTheDay", &inst.identity.motd);
@@ -146,29 +155,114 @@ pub fn sync_ini(inst: &ServerInstance) -> AppResult<Vec<String>> {
     g.set("RconPlugin", "RconMaxKarma", &r.max_karma.to_string());
     ini::write_file(&path, &g.to_text())?;
 
-    // DedicatedServer.ini – owner/world/platform settings.
-    let path = inst.dedicated_ini();
-    let mut d = IniDoc::parse(&ini::read_file(&path).unwrap_or_default());
-    const DS: &str = "/Script/Dominion.DedicatedServerSettings";
-    if !inst.ini.owner_id.is_empty() {
-        d.set(DS, "OwnerId", &inst.ini.owner_id);
-    }
-    if !inst.ini.server_name.is_empty() {
-        d.set(DS, "ServerName", &inst.ini.server_name);
-    }
-    if !inst.ini.default_world_name.is_empty() {
-        d.set(DS, "DefaultWorldName", &inst.ini.default_world_name);
-    }
-    if !inst.ini.admin_password.is_empty() {
-        d.set(DS, "AdminPassword", &inst.ini.admin_password);
-    }
-    d.set(DS, "WorldPassword", &inst.ini.world_password);
-    if !inst.ini.platform_policy.is_empty() {
-        d.set(DS, "PlatformPolicy", &inst.ini.platform_policy);
-    }
-    d.set(DS, "bAllowSendingCrashDumps", if inst.ini.allow_crash_dumps { "True" } else { "False" });
-    ini::write_file(&path, &d.to_text())?;
+    Ok(notes)
+}
 
+/// `ConfigVersion` / `BlueprintConfigVersion` a fresh Enhanced 3.0.1 server (CL-379176) writes.
+pub const FRESH_CONFIG_VERSION: &str = "13";
+pub const FRESH_BLUEPRINT_CONFIG_VERSION: &str = "25";
+
+/// Profile-owned values an admin can also change from inside the game (Settings → Server Settings
+/// as admin, or `SetServerSetting` over RCON – both write through to ServerSettings.ini, and a
+/// clean shutdown rewrites that file from the server's memory).
+const ADOPTABLE: [&str; 4] = ["AdminPassword", "ServerPassword", "ServerMessageOfTheDay", "ServerName"];
+
+fn profile_value<'a>(inst: &'a mut ServerInstance, key: &str) -> &'a mut String {
+    match key {
+        "AdminPassword" => &mut inst.identity.admin_password,
+        "ServerPassword" => &mut inst.identity.server_password,
+        "ServerMessageOfTheDay" => &mut inst.identity.motd,
+        _ => &mut inst.identity.server_name,
+    }
+}
+
+/// Short hash of a value, so the profile remembers what it last wrote without storing the
+/// passwords a second time in plain text.
+fn fingerprint(v: &str) -> String {
+    use sha2::Digest;
+    let d = sha2::Sha256::digest(v.as_bytes());
+    d.iter().take(12).map(|b| format!("{b:02x}")).collect()
+}
+
+fn file_values(inst: &ServerInstance) -> Vec<(&'static str, Option<String>)> {
+    let s = IniDoc::parse(&ini::read_file(&inst.settings_path()).unwrap_or_default());
+    let e = IniDoc::parse(&ini::read_file(&inst.engine_ini()).unwrap_or_default());
+    ADOPTABLE
+        .iter()
+        .map(|k| {
+            let v = if *k == "ServerName" {
+                e.get("OnlineSubsystem", k).map(|v| v.trim().trim_matches('"').to_string())
+            } else {
+                s.get(SETTINGS_SECTION, k)
+            };
+            (*k, v)
+        })
+        .collect()
+}
+
+/// Take values an admin changed in-game into the profile instead of overwriting them on the next
+/// start. Per key: if the file no longer holds what the manager last wrote, and the profile still
+/// does (nobody edited it in the app since), the server's value wins. Profiles without a record
+/// (created before 1.0.5) adopt a non-empty file value over an empty profile value.
+/// Returns the adopted keys.
+pub fn adopt_server_changes(inst: &mut ServerInstance) -> Vec<String> {
+    if !inst.settings_path().exists() {
+        return vec![];
+    }
+    let mut adopted = vec![];
+    for (key, file) in file_values(inst) {
+        let Some(file) = file else { continue };
+        let last = inst.synced.get(key).cloned();
+        let profile = profile_value(inst, key).clone();
+        if file == profile || (key == "ServerName" && file.trim().is_empty()) {
+            continue;
+        }
+        let take = match &last {
+            Some(last) => fingerprint(&file) != *last && fingerprint(&profile) == *last,
+            None => profile.is_empty() && !file.trim().is_empty(),
+        };
+        if take {
+            *profile_value(inst, key) = file;
+            adopted.push(key.to_string());
+        }
+    }
+    adopted
+}
+
+/// Remember (as fingerprints) the values `sync_ini` is about to write.
+pub fn mark_synced(inst: &mut ServerInstance) {
+    for key in ADOPTABLE {
+        let v = profile_value(inst, key).clone();
+        let v = if key == "ServerName" { v.trim().to_string() } else { v };
+        inst.synced.insert(key.to_string(), fingerprint(&v));
+    }
+}
+
+/// Adopt in-game changes, then write the profile-owned keys. Saves the profile (and tells the UI)
+/// when anything changed. Use this instead of a bare `sync_ini` wherever a stored profile is synced.
+pub async fn sync_profile(state: &AppState, app: &AppHandle, inst: &mut ServerInstance) -> AppResult<Vec<String>> {
+    let before = (inst.identity.clone(), inst.synced.clone());
+    let adopted = adopt_server_changes(inst);
+    mark_synced(inst);
+    let mut notes = sync_ini(inst)?;
+    if before != (inst.identity.clone(), inst.synced.clone()) {
+        state.put_instance(inst).await?;
+        let _ = tauri::Emitter::emit(app, "instances-changed", ());
+    }
+    if !adopted.is_empty() {
+        let names: Vec<&str> = adopted
+            .iter()
+            .map(|k| match k.as_str() {
+                "ServerMessageOfTheDay" => "message of the day",
+                "AdminPassword" => "admin password",
+                "ServerPassword" => "join password",
+                _ => "server name",
+            })
+            .collect();
+        let msg = format!("Kept the {} changed in-game – it's now saved in this profile.", names.join(", "));
+        state.history.event(Some(&inst.id), "info", "settings", &msg);
+        notes.insert(0, msg);
+    }
     Ok(notes)
 }
 
@@ -225,30 +319,6 @@ pub fn read_ini_into(inst: &mut ServerInstance) {
             inst.mods = mods::parse_modlist(&text, &inst.mods_dir());
         }
     }
-    // Read DedicatedServer.ini for owner/world settings.
-    let d = IniDoc::parse(&ini::read_file(&inst.dedicated_ini()).unwrap_or_default());
-    const DS: &str = "/Script/Dominion.DedicatedServerSettings";
-    if let Some(v) = d.get(DS, "OwnerId").filter(|v| !v.trim().is_empty()) {
-        inst.ini.owner_id = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "ServerName").filter(|v| !v.trim().is_empty()) {
-        inst.ini.server_name = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "DefaultWorldName").filter(|v| !v.trim().is_empty()) {
-        inst.ini.default_world_name = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "AdminPassword").filter(|v| !v.trim().is_empty()) {
-        inst.ini.admin_password = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "WorldPassword") {
-        inst.ini.world_password = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "PlatformPolicy").filter(|v| !v.trim().is_empty()) {
-        inst.ini.platform_policy = v.trim().to_string();
-    }
-    if let Some(v) = d.get(DS, "bAllowSendingCrashDumps") {
-        inst.ini.allow_crash_dumps = v.trim() == "True" || v.trim().eq_ignore_ascii_case("true");
-    }
 }
 
 /// PIDs of this server's running processes and the main (engine) PID.
@@ -263,8 +333,11 @@ pub fn running_pids(inst: &ServerInstance) -> (Vec<u32>, Option<u32>) {
 pub async fn apply_pending(state: &AppState, inst: &ServerInstance) -> AppResult<bool> {
     let (configs, settings) = state.with_runtime(&inst.id, |r| (std::mem::take(&mut r.pending_configs), std::mem::take(&mut r.pending_settings))).await;
     let any = !configs.is_empty() || !settings.is_empty();
-    for (file, text) in configs {
-        ini::write_file(&inst.config_dir().join(&file), &text)?;
+    for (file, changes) in configs {
+        let path = inst.config_dir().join(&file);
+        let mut d = IniDoc::parse(&ini::read_file(&path)?);
+        d.apply_changes(&changes);
+        ini::write_file(&path, &d.to_text())?;
     }
     if !settings.is_empty() {
         super::settings::write_file_values(inst, &settings)?;
@@ -364,7 +437,7 @@ async fn start_locked(state: &AppState, app: &AppHandle, id: &str) -> AppResult<
     }
 
     apply_pending(state, &inst).await?;
-    for note in sync_ini(&inst)? {
+    for note in sync_profile(state, app, &mut inst).await? {
         manager_log(app, id, note);
     }
     let args = build_args(&inst);
@@ -510,6 +583,13 @@ async fn stop_locked(state: &AppState, app: &AppHandle, id: &str, force: bool) -
     if apply_pending(state, &inst).await.unwrap_or(false) {
         manager_log(app, id, "Applied config changes saved while the server was running.");
     }
+    // Show what an admin changed in-game right away (the next start would adopt it anyway).
+    if let Ok(mut fresh) = state.instance(id).await {
+        match sync_profile(state, app, &mut fresh).await {
+            Ok(notes) => notes.into_iter().for_each(|n| manager_log(app, id, n)),
+            Err(e) => manager_log(app, id, format!("Couldn't sync the profile with the config files: {e}")),
+        }
+    }
     state.emit_status(app, id).await;
 
     if inst.automation.backup_on_stop && inst.db_path().exists() {
@@ -626,7 +706,9 @@ pub async fn update_files(state: &AppState, app: &AppHandle, inst: &ServerInstan
             }
             state.with_runtime(&inst.id, |rt| rt.installed_build = build.clone()).await;
             // Make sure the config folder exists so settings can be edited before the first start.
-            let _ = sync_ini(inst);
+            if let Ok(mut fresh) = state.instance(&inst.id).await {
+                let _ = sync_profile(state, app, &mut fresh).await;
+            }
             state.history.event(Some(&inst.id), "success", "update", &format!("{title} done – build {}", build.clone().unwrap_or_default()));
             r.done(&format!("{} – build {}", title.replace("ing ", "ed "), build.unwrap_or_else(|| "?".into())));
             Ok(())
@@ -717,6 +799,45 @@ mod tests {
         assert_eq!(back.identity.admin_password, "pw");
         assert_eq!(back.rcon.password, "rc");
         assert_eq!(back.regions.excluded, vec!["IsleOfSiptah"]);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn in_game_admin_changes_win_over_a_stale_profile() {
+        let dir = std::env::temp_dir().join(format!("cesm-adopt-{}", uuid::Uuid::new_v4()));
+        let mut inst = ServerInstance { install_dir: dir.clone(), ..Default::default() };
+        inst.identity.motd = "Old".into();
+        inst.identity.admin_password = "pw".into();
+        std::fs::create_dir_all(inst.config_dir()).unwrap();
+        // A brand-new file gets the current config versions so the server doesn't "upgrade" it.
+        mark_synced(&mut inst);
+        sync_ini(&inst).unwrap();
+        let s = std::fs::read_to_string(inst.settings_path()).unwrap();
+        assert!(s.contains("ConfigVersion=13") && s.contains("BlueprintConfigVersion=25"));
+
+        // An admin changes the MOTD in-game (the server writes it through to the file)…
+        let mut doc = IniDoc::parse(&s);
+        doc.set(SETTINGS_SECTION, "ServerMessageOfTheDay", "Hello from in-game");
+        doc.set(SETTINGS_SECTION, "DropEquipmentOnDeath", "0");
+        std::fs::write(inst.settings_path(), doc.to_text()).unwrap();
+        // …so the next start adopts it instead of writing "Old" back.
+        assert_eq!(adopt_server_changes(&mut inst), vec!["ServerMessageOfTheDay"]);
+        assert_eq!(inst.identity.motd, "Hello from in-game");
+        mark_synced(&mut inst);
+        sync_ini(&inst).unwrap();
+        let s = std::fs::read_to_string(inst.settings_path()).unwrap();
+        assert!(s.contains("ServerMessageOfTheDay=Hello from in-game") && s.contains("DropEquipmentOnDeath=0"));
+
+        // A deliberate edit in the app still wins over the file.
+        inst.identity.motd = "Edited in the app".into();
+        assert!(adopt_server_changes(&mut inst).is_empty());
+        assert_eq!(inst.identity.motd, "Edited in the app");
+
+        // Profiles from before 1.0.5 have no record: only fill empty profile values.
+        let mut legacy = ServerInstance { install_dir: dir.clone(), ..Default::default() };
+        legacy.identity.admin_password = "different".into();
+        assert_eq!(adopt_server_changes(&mut legacy), vec!["ServerMessageOfTheDay"]);
+        assert_eq!(legacy.identity.admin_password, "different");
         let _ = std::fs::remove_dir_all(dir);
     }
 }

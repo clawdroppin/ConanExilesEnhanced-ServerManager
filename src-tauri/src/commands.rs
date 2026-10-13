@@ -1,7 +1,7 @@
 //! Every `#[tauri::command]`. Thin wrappers that delegate to `core::*`; mutating commands write
 //! to the audit log. Add new commands to `lib.rs`, `src/lib/ipc.ts` and `src/lib/devMock.ts`.
 
-use crate::core::{backup, diagnostics, gamedb, history, ini, maps, mods, modsync, network, proc, rcon, secrets, server, settings, steamcmd, supervisor, workshop};
+use crate::core::{access, backup, diagnostics, gamedb, history, ini, maps, mods, modsync, network, proc, rcon, secrets, server, settings, steamcmd, supervisor, workshop};
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 use crate::state::{manager_log, notify, now_ms, AppState, Folder};
@@ -298,6 +298,7 @@ pub async fn create_instance(app: AppHandle, state: St<'_>, input: CreateInput) 
             inst.mods = probe.mods;
         }
     }
+    server::mark_synced(&mut inst);
     let _ = server::sync_ini(&inst);
     if !input.rules.is_empty() {
         settings::write_file_values(&inst, &input.rules)?;
@@ -315,6 +316,7 @@ pub async fn create_instance(app: AppHandle, state: St<'_>, input: CreateInput) 
 pub async fn update_instance(app: AppHandle, state: St<'_>, instance: ServerInstance) -> AppResult<ServerInstance> {
     let old = state.instance(&instance.id).await?;
     let mut inst = instance;
+    inst.synced = old.synced.clone();
     inst.install_dir = abs_dir(inst.install_dir)?;
     inst.launch.max_players = inst.launch.max_players.clamp(1, 200);
     if inst.launch.port == 0 || inst.launch.query_port == 0 || inst.rcon.port == 0 {
@@ -339,7 +341,9 @@ pub async fn update_instance(app: AppHandle, state: St<'_>, instance: ServerInst
     state.history.audit(Some(&inst.id), "update-profile", "");
     let build = steamcmd::local_build(&inst.install_dir);
     state.with_runtime(&inst.id, |r| r.installed_build = build).await;
-    let restart_needed = old.identity != inst.identity
+    // The MOTD is applied live below; the other identity values need a restart.
+    let ident = |i: &ServerInstance| (i.identity.server_name.clone(), i.identity.server_password.clone(), i.identity.admin_password.clone());
+    let restart_needed = ident(&old) != ident(&inst)
         || old.launch.port != inst.launch.port
         || old.launch.query_port != inst.launch.query_port
         || old.launch.max_players != inst.launch.max_players
@@ -361,7 +365,9 @@ pub async fn update_instance(app: AppHandle, state: St<'_>, instance: ServerInst
                 state.with_runtime(&inst.id, |r| r.console_hidden = !inst.launch.show_console).await;
             }
             // The MOTD can be changed live.
-            if old.identity.motd != inst.identity.motd {
+            // (An empty value isn't accepted over RCON; a cleared MOTD is written on the next start –
+            // the profile wins there because it no longer matches what was last synced.)
+            if old.identity.motd != inst.identity.motd && !inst.identity.motd.trim().is_empty() {
                 let _ = state.rcon_exec(&old, &format!("SetServerSetting ServerMessageOfTheDay {}", inst.identity.motd)).await;
             }
             if restart_needed {
@@ -370,8 +376,7 @@ pub async fn update_instance(app: AppHandle, state: St<'_>, instance: ServerInst
         }
         None => {
             if inst.config_dir().exists() || inst.is_installed() {
-                let i2 = inst.clone();
-                blocking(move || server::sync_ini(&i2).map(|_| ())).await?;
+                server::sync_profile(&state, &app, &mut inst).await?;
             }
             state.rcon.disconnect(&inst.id).await;
         }
@@ -445,7 +450,7 @@ pub async fn clone_instance(state: St<'_>, id: String, name: String, copy_saves:
     let tmp = state.data_dir.join("tmp");
     blocking(move || {
         std::fs::create_dir_all(d2.config_dir())?;
-        for f in ["ServerSettings.ini", "DedicatedServer.ini", "Engine.ini", "Game.ini", "ModHttp.ini"] {
+        for f in ["ServerSettings.ini", "Engine.ini", "Game.ini", "ModHttp.ini"] {
             let p = s2.config_dir().join(f);
             if p.exists() {
                 ini::write_file(&d2.config_dir().join(f), &ini::read_file(&p)?)?;
@@ -459,6 +464,7 @@ pub async fn clone_instance(state: St<'_>, id: String, name: String, copy_saves:
         server::sync_ini(&d2).map(|_| ())
     })
     .await?;
+    server::mark_synced(&mut inst);
     add_instance(&state, inst).await
 }
 
@@ -640,7 +646,7 @@ pub async fn reset_game_rules(state: St<'_>, id: String, keys: Vec<String>) -> A
 
 // ------------------------------------------------------------------------------------- config
 
-const CONFIG_FILES: [&str; 5] = ["ServerSettings.ini", "DedicatedServer.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
+const CONFIG_FILES: [&str; 4] = ["ServerSettings.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
 
 fn check_file(file: &str) -> AppResult<()> {
     if CONFIG_FILES.contains(&file) {
@@ -661,9 +667,16 @@ pub async fn read_config(state: St<'_>, id: String, file: String) -> AppResult<C
         Ok(ConfigFile {
             exists: meta.is_some(),
             modified: meta.and_then(|m| m.modified().ok()).map(|t| chrono::DateTime::<chrono::Utc>::from(t).timestamp_millis()),
-            text: match pending {
-                Some(t) => t,
-                None => ini::read_file(&path)?,
+            text: {
+                let current = ini::read_file(&path)?;
+                match pending {
+                    Some(changes) => {
+                        let mut d = ini::IniDoc::parse(&current);
+                        d.apply_changes(&changes);
+                        d.to_text()
+                    }
+                    None => current,
+                }
             },
             path,
         })
@@ -678,21 +691,53 @@ pub struct WriteResult {
 }
 
 #[tauri::command]
-pub async fn write_config(app: AppHandle, state: St<'_>, id: String, file: String, text: String) -> AppResult<WriteResult> {
+pub async fn write_config(app: AppHandle, state: St<'_>, id: String, file: String, text: String, base: Option<String>) -> AppResult<WriteResult> {
     check_file(&file)?;
     let inst = state.instance(&id).await?;
     let deferred = server::running_pids(&inst).1.is_some();
     state.history.audit(Some(&id), "write-config", &file);
+    let path = inst.config_dir().join(&file);
     if deferred {
+        // Only the keys the user actually changed are kept, and merged after the server exits
+        // (its clean shutdown rewrites ServerSettings.ini from memory).
+        let pending = state.with_runtime(&id, |r| r.pending_configs.get(&file).cloned()).await.unwrap_or_default();
+        let base = match base {
+            Some(b) => b,
+            None => {
+                let mut d = ini::IniDoc::parse(&ini::read_file(&path)?);
+                d.apply_changes(&pending);
+                d.to_text()
+            }
+        };
+        let changes = ini::IniDoc::parse(&base).diff(&ini::IniDoc::parse(&text));
         state
             .with_runtime(&id, |r| {
-                r.pending_configs.insert(file.clone(), text.clone());
+                let list = r.pending_configs.entry(file.clone()).or_default();
+                for c in changes {
+                    list.retain(|o| !(o.section.eq_ignore_ascii_case(&c.section) && o.key.eq_ignore_ascii_case(&c.key)));
+                    list.push(c);
+                }
+                if list.is_empty() {
+                    r.pending_configs.remove(&file);
+                }
                 r.pending_restart = true;
             })
             .await;
     } else {
-        let p = inst.config_dir().join(&file);
-        blocking(move || ini::write_file(&p, &text)).await?;
+        blocking(move || {
+            let current = ini::read_file(&path)?;
+            match base {
+                // The file changed since the editor loaded it (the server or an in-game admin wrote
+                // to it): merge only the user's edits instead of overwriting those changes.
+                Some(b) if b != current => {
+                    let mut d = ini::IniDoc::parse(&current);
+                    d.apply_changes(&ini::IniDoc::parse(&b).diff(&ini::IniDoc::parse(&text)));
+                    ini::write_file(&path, &d.to_text())
+                }
+                _ => ini::write_file(&path, &text),
+            }
+        })
+        .await?;
     }
     state.emit_status(&app, &id).await;
     Ok(WriteResult { deferred })
@@ -905,62 +950,62 @@ pub async fn moderation_log(state: St<'_>, id: String, user_id: Option<String>) 
 
 // ---------------------------------------------------------------------------------------- player lists
 
-/// Read whitelist/blacklist/admin entries from DedicatedServer.ini.
+/// Ban list + whitelist (`Saved/blacklist.txt`, `Saved/whitelist.txt`).
 #[tauri::command]
-pub async fn player_lists(state: St<'_>, id: String) -> AppResult<Vec<ListEntry>> {
+pub async fn player_lists(state: St<'_>, id: String) -> AppResult<Vec<access::ListEntry>> {
     let inst = state.instance(&id).await?;
-    let path = inst.config_dir().join("DedicatedServer.ini");
-    blocking(move || {
-        let text = ini::read_file(&path)?;
-        if text.is_empty() {
-            return Ok(vec![]);
-        }
-        let doc = ini::IniDoc::parse(&text);
-        let section = "/Script/Dominion.DedicatedServerSettings";
-        let mut entries = vec![];
-        for (key, value) in doc.pairs(section) {
-            let base = ini::base_key(&key).to_lowercase();
-            if base == "whitelist" || base == "blacklist" || base == "adminlist" {
-                let list_name = if base == "whitelist" { "whitelist" } else if base == "blacklist" { "blacklist" } else { "admin" };
-                let fields: Vec<(String, String)> = value
-                    .trim_start_matches('(').trim_end_matches(')')
-                    .split(',')
-                    .filter_map(|kv| {
-                        let mut parts = kv.splitn(2, '=');
-                        let k = parts.next()?.trim().trim_matches('"').to_string();
-                        let v = parts.next()?.trim().trim_matches('"').to_string();
-                        Some((k, v))
-                    })
-                    .collect();
-                entries.push(ListEntry { list: list_name.to_string(), raw: value.clone(), fields });
-            }
-        }
-        Ok(entries)
-    }).await
+    blocking(move || access::read(&inst)).await
 }
 
+/// Add/remove a ban or whitelist entry. Running server → RCON (it owns the files then);
+/// stopped → the file is edited directly. Returns a human-readable result.
 #[tauri::command]
-pub async fn remove_list_entry(state: St<'_>, id: String, list: String, raw: String) -> AppResult<()> {
+pub async fn edit_player_list(state: St<'_>, id: String, list: String, add: bool, player_id: String, name: String, reason: String) -> AppResult<String> {
     let inst = state.instance(&id).await?;
-    let path = inst.config_dir().join("DedicatedServer.ini");
-    let key = match list.as_str() {
-        "whitelist" => "Whitelist",
-        "blacklist" => "Blacklist",
-        _ => "AdminList",
+    let pid = player_id.trim().to_string();
+    if !access::valid_id(&pid) {
+        return Err(AppError::msg("Enter a player id (Steam/platform id or Funcom user id) – letters and digits only."));
+    }
+    let running = server::running_pids(&inst).1.is_some();
+    let action = match (list.as_str(), add) {
+        ("ban", true) => "ban",
+        ("ban", false) => "unban",
+        ("whitelist", true) => "whitelist",
+        ("whitelist", false) => "unwhitelist",
+        _ => return Err(AppError::msg("Unknown list")),
     };
-    let raw2 = raw.clone();
-    blocking(move || {
-        let text = ini::read_file(&path)?;
-        let mut doc = ini::IniDoc::parse(&text);
-        let section = "/Script/Dominion.DedicatedServerSettings";
-        if !doc.remove_value(section, key, &raw2) {
-            return Err(AppError::msg("Entry not found in the ini file."));
+    let out = if running {
+        let reason1 = reason.replace(['\r', '\n'], " ");
+        let cmd = match action {
+            // Steam ids are 17 digits; anything else is treated as a Funcom user id.
+            "ban" => format!("banplayer {} {pid} {}", if pid.len() == 17 && pid.chars().all(|c| c.is_ascii_digit()) { "platformid" } else { "userid" }, reason1.trim()),
+            "unban" => format!("unbanplayer {pid}"),
+            "whitelist" => format!("whitelistplayer {pid}"),
+            _ => format!("unwhitelistplayer {pid}"),
+        };
+        let reply = state.rcon_exec(&inst, cmd.trim()).await?;
+        let low = reply.to_lowercase();
+        if low.starts_with("no player") || low.starts_with("failed") || low.contains("syntax error") {
+            return Err(AppError::msg(if action == "ban" {
+                format!("{} – the server can only ban players it has seen. Stop the server to add an offline ban to the list.", reply.trim())
+            } else {
+                reply.trim().to_string()
+            }));
         }
-        ini::write_file(&path, &doc.to_text())?;
-        Ok(())
-    }).await?;
-    state.history.audit(Some(&id), "list-remove", &format!("{list}: {raw}"));
-    Ok(())
+        reply.trim().to_string()
+    } else {
+        let (i2, l2, p2, n2) = (inst.clone(), list.clone(), pid.clone(), name.clone());
+        let changed = blocking(move || access::edit_file(&i2, &l2, add, &p2, &n2)).await?;
+        match (changed, add) {
+            (true, true) => format!("Added {pid} – applies when the server starts."),
+            (true, false) => format!("Removed {pid}."),
+            (false, true) => format!("{pid} is already on the list."),
+            (false, false) => format!("{pid} wasn't on the list."),
+        }
+    };
+    state.history.moderation(&id, &pid, &name, action, &reason);
+    state.history.audit(Some(&id), &format!("list-{action}"), &pid);
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------------------- world
@@ -1294,11 +1339,8 @@ pub async fn set_mods(app: AppHandle, state: St<'_>, id: String, mods_list: Vec<
         } else {
             let cache = state.workshop_dir().await;
             let i2 = inst.clone();
-            blocking(move || {
-                mods::write_modlist(&cache, &i2)?;
-                server::sync_ini(&i2).map(|_| ())
-            })
-            .await?;
+            blocking(move || mods::write_modlist(&cache, &i2).map(|_| ())).await?;
+            server::sync_profile(&state, &app, &mut inst).await?;
         }
     }
     state.emit_status(&app, &id).await;
@@ -1638,10 +1680,10 @@ pub async fn run_diagnostics(state: St<'_>, id: String) -> AppResult<DiagReport>
 }
 
 #[tauri::command]
-pub async fn fix_build_override(state: St<'_>, id: String) -> AppResult<()> {
-    let inst = state.instance(&id).await?;
+pub async fn fix_build_override(app: AppHandle, state: St<'_>, id: String) -> AppResult<()> {
+    let mut inst = state.instance(&id).await?;
     require_stopped(&inst)?;
-    blocking(move || server::sync_ini(&inst).map(|_| ())).await
+    server::sync_profile(&state, &app, &mut inst).await.map(|_| ())
 }
 
 #[tauri::command]

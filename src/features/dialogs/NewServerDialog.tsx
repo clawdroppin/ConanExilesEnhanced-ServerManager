@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, ArrowRight, Check, Crown, FolderOpen, Globe2, Rocket, Server } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, FolderOpen, Globe2, Rocket, Server } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { api, errMsg } from '@/lib/ipc';
 import { bytes, generatePassword } from '@/lib/format';
 import { SERVER_COLORS } from '@/lib/colors';
 import { pickFolder } from '@/lib/shell';
-import { BEACON_OFFSET, beaconPort } from '@/lib/net';
+import { pingerPort } from '@/lib/net';
 import { DEFAULT_MAP, mergeMaps } from '@/lib/maps';
-import type { DedicatedSettings, FolderProbe, MapInfo } from '@/lib/types';
+import type { FolderProbe, MapInfo } from '@/lib/types';
 import { useApp } from '@/store/app';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Checkbox, Input, Label, NumberInput, SecretInput, Select, Slider } from '@/components/ui/Field';
+import { Checkbox, Input, Label, NumberInput, SecretInput, Segmented, Select, Slider } from '@/components/ui/Field';
 import { Callout } from '@/components/ui/Surface';
-import { ownerIdProblem, PLATFORMS } from '@/features/server/views/Settings';
+
+/** Starting rules written into ServerSettings.ini before the first start (all editable later under
+ *  Game Rules). Values are in file form – DropEquipmentOnDeath: 0 nothing, 1 everything, 2 backpack. */
+const DEATH = [
+  { value: '0', label: 'Keep everything' },
+  { value: '2', label: 'Drop backpack' },
+  { value: '1', label: 'Drop everything' },
+] as const;
 
 const STEPS = [
   { title: 'Server', icon: Server },
@@ -34,7 +41,12 @@ export function NewServerDialog() {
   const [port, setPort] = useState(7777);
   const [maxPlayers, setMaxPlayers] = useState(16);
   const [template, setTemplate] = useState('');
-  const [ini, setIni] = useState<DedicatedSettings>({ ownerId: '', serverName: '', defaultWorldName: '', defaultMap: DEFAULT_MAP, adminPassword: '', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
+  const [serverName, setServerName] = useState('');
+  const [map, setMap] = useState(DEFAULT_MAP);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [joinPassword, setJoinPassword] = useState('');
+  const [pvp, setPvp] = useState(false);
+  const [death, setDeath] = useState<string>('1');
   const [installNow, setInstallNow] = useState(true);
   const [probe, setProbe] = useState<FolderProbe | null>(null);
   const [discovered, setDiscovered] = useState<MapInfo[]>([]);
@@ -49,7 +61,12 @@ export function NewServerDialog() {
     setColor(Object.keys(SERVER_COLORS)[instances.length % Object.keys(SERVER_COLORS).length]);
     setDir('');
     setTemplate(dialog?.kind === 'new' ? (dialog.templateId ?? '') : '');
-    setIni({ ownerId: instances[0]?.ini?.ownerId ?? '', serverName: '', defaultWorldName: '', defaultMap: DEFAULT_MAP, adminPassword: generatePassword(12), worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true });
+    setServerName('');
+    setMap(DEFAULT_MAP);
+    setAdminPassword(generatePassword(12));
+    setJoinPassword('');
+    setPvp(false);
+    setDeath('1');
     setMaxPlayers(6);
     setInstallNow(true);
     setError(null);
@@ -75,11 +92,9 @@ export function NewServerDialog() {
   }, [dir]);
 
   const mapOptions = mergeMaps(discovered);
-  const serverName = ini.serverName || name.slice(0, 16);
-  const worldName = ini.defaultWorldName || name.replace(/[^A-Za-z0-9]/g, '').slice(0, 16) || 'MyWorld';
-  const ownerErr = ownerIdProblem(ini.ownerId);
-  const portClash = instances.find((i) => [i.launch.port, beaconPort(i), i.launch.queryPort].some((p) => p > 0 && (p === port || p === port + BEACON_OFFSET)));
-  const canNext = step === 0 ? name.trim().length > 0 && !portClash : step === 1 ? !!ini.adminPassword && !ownerErr : true;
+  const listedName = serverName.trim() || name.trim();
+  const portClash = instances.find((i) => [i.launch.port, pingerPort(i), i.launch.queryPort].some((p) => p > 0 && (p === port || p === port + 1)));
+  const canNext = step === 0 ? name.trim().length > 0 && !portClash : step === 1 ? !!adminPassword : true;
 
   const create = async () => {
     setBusy(true);
@@ -89,8 +104,10 @@ export function NewServerDialog() {
         name: name.trim(),
         installDir: dir || null,
         color,
-        identity: { serverName, serverPassword: ini.worldPassword, adminPassword: ini.adminPassword, motd: '' },
-        ini: { ...ini, serverName, defaultWorldName: worldName },
+        identity: { serverName: listedName, serverPassword: joinPassword, adminPassword, motd: '' },
+        ini: { defaultMap: map },
+        // Copying another server keeps its rules; otherwise seed the two choices made here.
+        rules: template ? {} : { PVPEnabled: pvp ? 'True' : 'False', DropEquipmentOnDeath: death },
         port,
         maxPlayers,
         installNow,
@@ -203,7 +220,7 @@ export function NewServerDialog() {
                   {portClash ? (
                     <div className="mt-1.5 text-[11.5px] text-err">Clashes with {portClash.name}.</div>
                   ) : (
-                    <div className="mt-1.5 text-[11.5px] text-fg-4">Beacon UDP {port + BEACON_OFFSET} is set automatically (Funcom’s default pair).</div>
+                    <div className="mt-1.5 text-[11.5px] text-fg-4">The server also uses UDP {port + 1}; a free query port is picked automatically.</div>
                   )}
                 </div>
                 {instances.length > 0 && (
@@ -224,72 +241,59 @@ export function NewServerDialog() {
           )}
           {step === 1 && (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Server name</Label>
-                  <Input value={ini.serverName} placeholder={name.slice(0, 16)} onChange={(e) => setIni({ ...ini, serverName: e.target.value })} />
-                </div>
-                <div>
-                  <Label>World name (players search this)</Label>
-                  <Input value={ini.defaultWorldName} placeholder={worldName} onChange={(e) => setIni({ ...ini, defaultWorldName: e.target.value })} />
-                </div>
+              <div>
+                <Label>Server name (shown in the server browser)</Label>
+                <Input value={serverName} placeholder={name} onChange={(e) => setServerName(e.target.value)} />
               </div>
               <div>
                 <Label>Map</Label>
-                <Select value={ini.defaultMap} onChange={(e) => setIni({ ...ini, defaultMap: e.target.value })}>
+                <Select value={map} onChange={(e) => setMap(e.target.value)}>
                   {mapOptions.map((m) => (
                     <option key={m.value} value={m.value}>
                       {m.label} — {m.hint}
                     </option>
                   ))}
                 </Select>
-                <div className="mt-1.5 text-[11.5px] text-fg-4">Which world the server runs. Each map keeps its own save file, so switching maps later starts a fresh world on that map.</div>
-              </div>
-              <div>
-                <Label>
-                  <span className="flex items-center gap-1.5">
-                    <Crown className="size-3 text-gold" /> Your Player ID (Owner ID)
-                  </span>
-                </Label>
-                <Input mono value={ini.ownerId} invalid={!!ownerErr} onChange={(e) => setIni({ ...ini, ownerId: e.target.value.trim() })} placeholder="Bottom of the in-game Settings menu – click copy" />
-                {ownerErr ? <div className="mt-1.5 text-[11.5px] text-err">{ownerErr}</div> : <div className="mt-1.5 text-[11.5px] text-fg-4">Required before the first start – it makes you the owner (ban and unban anyone). You can add it later under Server Settings.</div>}
+                <div className="mt-1.5 text-[11.5px] text-fg-4">Each map keeps its own world, so switching maps later starts a fresh world on that map.</div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Admin password</Label>
-                  <SecretInput value={ini.adminPassword} onChange={(v) => setIni({ ...ini, adminPassword: v })} generate />
+                  <SecretInput value={adminPassword} onChange={setAdminPassword} generate />
+                  <div className="mt-1.5 text-[11.5px] text-fg-4">In-game: MakeMeAdmin &lt;password&gt; in the console.</div>
                 </div>
                 <div>
-                  <Label>World password (optional)</Label>
-                  <SecretInput value={ini.worldPassword} onChange={(v) => setIni({ ...ini, worldPassword: v })} placeholder="Open to everyone" />
+                  <Label>Join password (optional)</Label>
+                  <SecretInput value={joinPassword} onChange={setJoinPassword} placeholder="Open to everyone" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Platforms</Label>
-                  <Select value={ini.platformPolicy} onChange={(e) => setIni({ ...ini, platformPolicy: e.target.value })}>
-                    {PLATFORMS.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <Label>Max players</Label>
-                  <div className="flex items-center gap-3">
-                    <Slider value={maxPlayers} min={1} max={100} onChange={setMaxPlayers} marks={[1, 4, 8, 16, 32, 64, 100]} />
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={maxPlayers}
-                      onChange={(e) => setMaxPlayers(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
-                      className="h-8 w-16 rounded-md border border-line bg-bg px-2 text-center font-mono text-[13px] text-fg focus:border-accent focus:outline-none"
-                    />
+              {!template && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>On death, players…</Label>
+                    <Segmented value={death} onChange={setDeath} options={DEATH.map((d) => ({ value: d.value, label: d.label }))} />
+                  </div>
+                  <div>
+                    <Label>Mode</Label>
+                    <Segmented value={pvp ? 'pvp' : 'pve'} onChange={(v) => setPvp(v === 'pvp')} options={[{ value: 'pve', label: 'PvE' }, { value: 'pvp', label: 'PvP' }]} />
                   </div>
                 </div>
+              )}
+              <div>
+                <Label>Max players</Label>
+                <div className="flex items-center gap-3">
+                  <Slider value={maxPlayers} min={1} max={100} onChange={setMaxPlayers} marks={[1, 4, 8, 16, 32, 64, 100]} />
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={maxPlayers}
+                    onChange={(e) => setMaxPlayers(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
+                    className="h-8 w-16 rounded-md border border-line bg-bg px-2 text-center font-mono text-[13px] text-fg focus:border-accent focus:outline-none"
+                  />
+                </div>
               </div>
+              <div className="text-[11.5px] text-fg-4">All other rules (rates, decay, raids, storms…) are under Game Rules after creating the server.</div>
             </>
           )}
           {step === 2 && (
@@ -298,27 +302,26 @@ export function NewServerDialog() {
                 <dl className="grid grid-cols-[140px_1fr] gap-y-2 text-[12.5px]">
                   <dt className="text-fg-3">Profile</dt>
                   <dd className="text-fg">{name}</dd>
-                  <dt className="text-fg-3">Server / world</dt>
-                  <dd className="text-fg">
-                    {serverName} · <span className="font-mono">{worldName}</span>
-                  </dd>
-                  <dt className="text-fg-3">Port</dt>
+                  <dt className="text-fg-3">Server name</dt>
+                  <dd className="text-fg">{listedName}</dd>
+                  <dt className="text-fg-3">Ports</dt>
                   <dd className="font-mono text-fg">
-                    UDP {port} (game) + {port + BEACON_OFFSET} (beacon)
+                    UDP {port} + {port + 1} (game) · query picked automatically
                   </dd>
                   <dt className="text-fg-3">Players</dt>
                   <dd className="text-fg">
-                    up to {maxPlayers} · {PLATFORMS.find((p) => p.value === ini.platformPolicy)?.label}
+                    up to {maxPlayers}
+                    {!template && ` · ${pvp ? 'PvP' : 'PvE'} · ${DEATH.find((d) => d.value === death)?.label.toLowerCase()} on death`}
                   </dd>
                   <dt className="text-fg-3">Access</dt>
-                  <dd className="text-fg">{ini.worldPassword ? 'Password protected' : 'Open'}</dd>
+                  <dd className="text-fg">{joinPassword ? 'Password protected' : 'Open'}</dd>
                   <dt className="text-fg-3">Folder</dt>
                   <dd className="truncate font-mono text-[11.5px] text-fg">{dir || 'automatic'}</dd>
                 </dl>
               </div>
               <Checkbox checked={installNow} onChange={setInstallNow} label="Download the server files now with SteamCMD (several GB, no Steam login needed)" />
               <Callout tone="info">
-                After the download, press <b className="text-fg">Start</b>. The first start creates a fresh world named “{worldName}”. To host a world you already play locally, import it under <b className="text-fg">Worlds</b>.
+                After the download, press <b className="text-fg">Start</b>. The first start creates a fresh world. To host a world from another server or single-player, import its game_0.db under <b className="text-fg">Worlds</b>.
               </Callout>
               {error && <Callout tone="err">{error}</Callout>}
             </>

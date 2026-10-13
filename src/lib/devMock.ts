@@ -19,9 +19,9 @@ function makeInstance(id: string, name: string, port: number, color: string, ext
     archived: false,
     branch: 'public',
     branchPassword: '',
-    identity: { serverName: name.slice(0, 16), serverPassword: '', adminPassword: 'Ember1234', motd: '' },
-    ini: { ownerId: '9f2c4e1ab37d4c0e8a1f5b6c7d8e9f01', serverName: name.slice(0, 16), defaultWorldName: name.replace(/\W/g, '').slice(0, 16), defaultMap: '/Game/Maps/ConanSandbox/ConanSandbox', adminPassword: 'Ember1234', worldPassword: '', platformPolicy: 'Crossplay', allowCrashDumps: true },
-    launch: { port, beaconPort: 0, upnp: false, queryPort: 0, maxPlayers: 16, multihome: '', multihomeHttp: '', showConsole: false, priority: 'normal', affinity: [], options: { '-log': true, '-unattended': true, '-NoCrashDialog': true }, extraArgs: '' },
+    identity: { serverName: name, serverPassword: '', adminPassword: 'Ember1234', motd: '' },
+    ini: { defaultMap: '/Game/Maps/ConanSandbox/ConanSandbox' },
+    launch: { port, upnp: false, queryPort: 27015, maxPlayers: 16, multihome: '', multihomeHttp: '', showConsole: false, priority: 'normal', affinity: [], options: { '-log': true, '-unattended': true, '-NoCrashDialog': true }, extraArgs: '' },
     rcon: { enabled: false, password: '', port: 0, maxKarma: 0, pollSecs: 5 },
     regions: { excluded: [] },
     mods: [],
@@ -121,9 +121,9 @@ let settings: AppSettings = {
   metricsRetentionDays: 30,
 };
 
-const ini = `[/Script/Dominion.DedicatedServerSettings]\r\nOwnerId=9f2c4e1ab37d4c0e8a1f5b6c7d8e9f01\r\nServerName=Ashenfall Friends\r\nDefaultWorldName=AshenfallFriends\r\nAdminPassword=Ember1234\r\nWorldPassword=\r\nPlatformPolicy=Crossplay\r\nbAllowSendingCrashDumps=True\r\nServerGuid=8C1F0E2A4B3D4E5F9A0B1C2D3E4F5061\r\n+KnownPlayerList=(PlayerId="0a1b2c3d4e5f60718293a4b5c6d7e8f9",PlayerName="Zezima")\r\n+KnownPlayerList=(PlayerId="1a2b3c4d5e6f70818293a4b5c6d7e8f0",PlayerName="Gielinor_Gal")\r\n+AdminList=(PlayerId="1a2b3c4d5e6f70818293a4b5c6d7e8f0")\r\n`;
+const ini = `;METADATA=(Diff=true, UseCommands=true)\r\n[ServerSettings]\r\nAdminPassword=Ember1234\r\nServerPassword=\r\nServerMessageOfTheDay=Welcome, exile!\r\nServerModList=\r\nDropEquipmentOnDeath=0\r\nPVPEnabled=False\r\nHarvestAmountMultiplier=2\r\nConfigVersion=13\r\nBlueprintConfigVersion=25\r\n`;
 
-const files: Record<string, string> = { 'DedicatedServer.ini': ini, 'Engine.ini': '[/Script/OnlineSubsystemUtils.IpNetDriver]\r\nNetServerMaxTickRate=30\r\n', 'Game.ini': '[/Script/Engine.GameSession]\r\nMaxPlayers=6\r\n', 'GameUserSettings.ini': '' };
+const files: Record<string, string> = { 'ServerSettings.ini': ini, 'Engine.ini': '[OnlineSubsystem]\r\nServerName=Ashenfall Friends\r\n[/Script/OnlineSubsystemUtils.IpNetDriver]\r\nNetServerMaxTickRate=30\r\n', 'Game.ini': '[RconPlugin]\r\nRconEnabled=1\r\nRconPort=25575\r\n', 'ModHttp.ini': '' };
 
 const backups: BackupInfo[] = Array.from({ length: 6 }, (_, i) => ({
   path: `D:\\ConanExilesServers\\Ashenfall-Friends\\Backups\\2026-10-0${9 - i}_auto.zip`,
@@ -287,9 +287,9 @@ export function installDevMock() {
     read_config: ({ file }) => ({ path: `D:\\ConanExilesServers\\Ashenfall-Friends\\ConanSandbox\\Saved\\Config\\WindowsServer\\${file}`, exists: true, text: files[file as string] ?? '', modified: now - 60000 }),
     write_config: ({ id, file, text }) => {
       files[file as string] = text as string;
-      return { deferred: statuses[id as string]?.state === 'running', instance: find(id) };
+      return { deferred: statuses[id as string]?.state === 'running' };
     },
-    list_config_history: () => [['D:\\x\\_history\\DedicatedServer.ini.20261009-101500', now - 3600_000]],
+    list_config_history: () => [['D:\\x\\_history\\ServerSettings.ini.20261009-101500', now - 3600_000]],
     read_text_file: () => LOG_SAMPLES.join('\n'),
     read_log_tail: () => ['LogInit: Build: ++dominion+release-CL-19876543', 'LogInit: Engine Version: 5.4.4-0+++dominion+release', ...LOG_SAMPLES],
     list_log_files: () => [{ path: 'D:\\x\\ConanSandbox-backup-2026.10.08.log', name: 'ConanSandbox-backup-2026.10.08-21.04.11.log', size: 2_400_000, modified: now - 86400_000 }],
@@ -306,12 +306,10 @@ export function installDevMock() {
     rename_save: () => undefined,
     reset_world: () => null,
     player_lists: () => [
-      { list: 'KnownPlayerList', raw: '(PlayerId="0a1b",PlayerName="Zezima")', fields: [['PlayerId', '0a1b2c3d4e5f60718293a4b5c6d7e8f9'], ['PlayerName', 'Zezima']] },
-      { list: 'KnownPlayerList', raw: '(PlayerId="1a2b",PlayerName="Gielinor_Gal")', fields: [['PlayerId', '1a2b3c4d5e6f70818293a4b5c6d7e8f0'], ['PlayerName', 'Gielinor_Gal']] },
-      { list: 'AdminList', raw: '(PlayerId="1a2b")', fields: [['PlayerId', '1a2b3c4d5e6f70818293a4b5c6d7e8f0']] },
-      { list: 'BannedUserList', raw: '(PlayerId="ffee",PlayerName="GoldSpammer")', fields: [['PlayerId', 'ffeeddccbbaa99887766554433221100'], ['PlayerName', 'GoldSpammer']] },
+      { list: 'ban', id: '76561198000000099', name: 'GoldSpammer' },
+      { list: 'whitelist', id: '76561198000000001', name: 'Zezima' },
     ],
-    remove_list_entry: () => true,
+    edit_player_list: ({ add, playerId }) => (add ? `Added ${playerId}.` : `Removed ${playerId}.`),
     list_mods: () => ({
       mods: mockMods,
       folderExists: mockMods.some((m) => m.enabled),
@@ -369,14 +367,12 @@ export function installDevMock() {
     }),
     upnp_map: ({ id }) => {
       const i = find(id);
-      const b = i.launch.beaconPort || i.launch.port + 1111;
-      return [`UDP ${i.launch.port} → 192.168.1.20:${i.launch.port} forwarded`, `UDP ${b} → 192.168.1.20:${b} forwarded`];
+      return [i.launch.port, i.launch.port + 1, i.launch.queryPort].map((p) => `UDP ${p} → 192.168.1.20:${p} forwarded`);
     },
     upnp_unmap: () => undefined,
     run_diagnostics: () => [
       { id: 'install', title: 'Server files', level: 'ok', detail: 'D:\\ConanExilesServers\\Ashenfall-Friends\\ConanSandbox\\Binaries\\Win64\\ConanSandboxServer-Win64-Shipping.exe', fix: '' },
-      { id: 'required', title: 'Required settings', level: 'ok', detail: 'Server name, world name and admin password are set.', fix: '' },
-      { id: 'owner', title: 'Owner ID', level: 'ok', detail: 'Looks like a valid Player ID.', fix: '' },
+      { id: 'required', title: 'Required settings', level: 'ok', detail: 'Server name and admin password are set.', fix: '' },
       { id: 'ports', title: 'Ports', level: 'ok', detail: 'UDP 7777 is available (used by this server).', fix: '' },
       { id: 'firewall', title: 'Windows Firewall', level: 'warn', detail: 'No inbound rule for this server – players outside your PC may not reach it.', fix: 'firewall' },
       { id: 'ram', title: 'Memory', level: 'ok', detail: '31.9 GB installed – 8 GB recommended for 6 players.', fix: '' },
@@ -394,8 +390,26 @@ export function installDevMock() {
     list_folders: () => [],
     save_folders: () => undefined,
     cancel_countdown: () => undefined,
-    read_game_rules: () => ({}),
-    apply_game_rules: () => ({ deferred: false, instance: find('x') }),
+    read_game_rules: () => ({
+      exists: true,
+      values: Object.fromEntries(
+        files['ServerSettings.ini']
+          .split(/\r?\n/)
+          .filter((l) => l.includes('=') && !l.startsWith(';'))
+          .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),
+      ),
+      pending: {},
+      configVersion: '13',
+      blueprintConfigVersion: '25',
+    }),
+    apply_game_rules: ({ changes }) => {
+      let t = files['ServerSettings.ini'];
+      for (const [k, v] of Object.entries(changes as Record<string, string>)) {
+        t = new RegExp(`^${k}=`, 'm').test(t) ? t.replace(new RegExp(`^${k}=.*$`, 'm'), `${k}=${v}`) : t + `${k}=${v}\r\n`;
+      }
+      files['ServerSettings.ini'] = t;
+      return { live: Object.keys(changes as object), written: [], queued: [], failed: [], restartNeeded: false };
+    },
     reset_game_rules: () => undefined,
     rcon_command: () => 'ok',
     player_history: () => [],

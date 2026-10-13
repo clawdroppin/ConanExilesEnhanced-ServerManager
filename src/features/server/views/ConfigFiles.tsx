@@ -19,7 +19,6 @@ import { confirm } from '@/components/ui/Dialog';
 
 const FILES: { name: ConfigFileName; hint: string }[] = [
   { name: 'ServerSettings.ini', hint: 'Game rules, MOTD, join/admin passwords, mod list' },
-  { name: 'DedicatedServer.ini', hint: 'Server identity, owner/world, platform, admin/ban lists' },
   { name: 'Engine.ini', hint: 'Engine & network tuning' },
   { name: 'Game.ini', hint: 'Game session (MaxPlayers)' },
   { name: 'ModHttp.ini', hint: 'Per-mod HTTP origin approvals' },
@@ -53,8 +52,7 @@ const extensions = [StreamLanguage.define(properties), syntaxHighlighting(highli
 export function ConfigFiles({ id }: { id: string }) {
   const st = useStatus(id);
   const toast = useApp((s) => s.toast);
-  const upsert = useApp((s) => s.upsertInstance);
-  const [file, setFile] = useState<ConfigFileName>('DedicatedServer.ini');
+  const [file, setFile] = useState<ConfigFileName>('ServerSettings.ini');
   const [loaded, setLoaded] = useState<ConfigFile | null>(null);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -84,16 +82,15 @@ export function ConfigFiles({ id }: { id: string }) {
   const save = useCallback(async () => {
     setSaving(true);
     try {
-      const r = await api.writeConfig(id, file, text);
-      upsert(r.instance);
-      toast('success', r.deferred ? `${file} will be written when the server stops` : `${file} saved`, id);
+      const r = await api.writeConfig(id, file, text, loaded?.text);
+      toast('success', r.deferred ? `${file}: your changes will be merged in when the server stops` : `${file} saved`, id);
       await load(file);
     } catch (e) {
       toast('error', errMsg(e), id);
     } finally {
       setSaving(false);
     }
-  }, [id, file, text, load, toast, upsert]);
+  }, [id, file, text, loaded, load, toast]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -165,11 +162,11 @@ export function ConfigFiles({ id }: { id: string }) {
       </div>
       <div className="space-y-2 px-4 pt-3">
         {st?.state === 'running' && (
-          <Callout tone="warn">The server rewrites its config on shutdown. Saves made now are kept aside and written as soon as it stops, then applied on the next start.</Callout>
+          <Callout tone="warn">The server rewrites its config from memory when it shuts down. Saves made now are kept aside and merged in key-by-key as soon as it stops – anything changed in-game meanwhile is kept. Prefer Game Rules for live changes.</Callout>
         )}
-        {file === 'DedicatedServer.ini' && (
+        {file === 'ServerSettings.ini' && (
           <Callout tone="info">
-            Server Settings writes OwnerId, ServerName, DefaultWorldName, passwords and PlatformPolicy here on every start – edits to those keys also update Server Settings. ServerGuid and the admin/ban lists are written by the server itself.
+            AdminPassword, ServerPassword, ServerMessageOfTheDay and ServerModList are managed under Server Settings / Mods. If you change the passwords or MOTD in-game as admin, the manager picks up your in-game values instead of overwriting them.
           </Callout>
         )}
         {loaded && !loaded.exists && <Callout tone="info">This file doesn’t exist yet – the server or the manager creates it on first start. Saving creates it now.</Callout>}

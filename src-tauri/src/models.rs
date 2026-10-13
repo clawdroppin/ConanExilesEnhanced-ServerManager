@@ -99,41 +99,14 @@ impl Default for Identity {
     }
 }
 
-/// Values written to DedicatedServer.ini – the per-server gameplay/identity settings.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Engine.ini map selection. (Kept under the `ini` key for profile compatibility – profiles from
+/// 1.0.0–1.0.4 also carry Dragonwilds-style ownerId/worldPassword/platformPolicy fields here; Conan
+/// has no DedicatedServer.ini, so those are ignored on load and dropped on the next save.)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct DedicatedSettings {
-    /// 32-char hex Player ID of the server owner.
-    pub owner_id: String,
-    /// Name shown in the server browser.
-    pub server_name: String,
-    /// Name of the world created on first start.
-    pub default_world_name: String,
     /// Map the server runs (Engine.ini `ServerDefaultMap`). Empty = the game's default map.
     pub default_map: String,
-    /// In-game admin password (MakeMeAdmin).
-    pub admin_password: String,
-    /// Join password (empty = public).
-    pub world_password: String,
-    /// Crossplay | PC | PlayStation | Xbox | Nintendo
-    pub platform_policy: String,
-    /// bAllowSendingCrashDumps
-    pub allow_crash_dumps: bool,
-}
-
-impl Default for DedicatedSettings {
-    fn default() -> Self {
-        Self {
-            owner_id: String::new(),
-            server_name: String::new(),
-            default_world_name: "MyWorld".into(),
-            default_map: String::new(),
-            admin_password: String::new(),
-            world_password: String::new(),
-            platform_policy: "Crossplay".into(),
-            allow_crash_dumps: true,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -440,6 +413,10 @@ pub struct ServerInstance {
     pub mods: Vec<ModEntry>,
     pub mod_profiles: Vec<ModProfile>,
     pub automation: AutomationSettings,
+    /// Fingerprints of the profile-owned INI values the manager last wrote (key → short hash).
+    /// Lets `server::adopt_server_changes` tell an in-game admin change from a stale profile.
+    /// Backend-managed: `update_instance` always keeps the stored copy.
+    pub synced: std::collections::BTreeMap<String, String>,
 }
 
 impl Default for ServerInstance {
@@ -466,6 +443,7 @@ impl Default for ServerInstance {
             mods: vec![],
             mod_profiles: vec![],
             automation: AutomationSettings::default(),
+            synced: Default::default(),
         }
     }
 }
@@ -500,9 +478,6 @@ impl ServerInstance {
     }
     pub fn settings_path(&self) -> PathBuf {
         self.config_dir().join("ServerSettings.ini")
-    }
-    pub fn dedicated_ini(&self) -> PathBuf {
-        self.config_dir().join("DedicatedServer.ini")
     }
     pub fn engine_ini(&self) -> PathBuf {
         self.config_dir().join("Engine.ini")
@@ -783,14 +758,6 @@ pub struct AppInfo {
     pub total_memory: u64,
     pub os: String,
     pub hostname: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListEntry {
-    pub list: String,
-    pub raw: String,
-    pub fields: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone, Serialize)]

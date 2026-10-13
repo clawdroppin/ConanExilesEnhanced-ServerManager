@@ -2,27 +2,27 @@
 import { api } from './ipc';
 import type { NetInfo, ServerInstance } from './types';
 
-/** Funcom's server image derives the beacon port as game port + 1111 (7777 → 8888). */
-export const BEACON_OFFSET = 1111;
-
-export function beaconPort(inst: Pick<ServerInstance, 'launch'>): number {
-  return inst.launch.beaconPort > 0 ? inst.launch.beaconPort : inst.launch.port + BEACON_OFFSET;
+/** Conan Exiles also binds game port + 1 (UDP) for its pinger/raw-UDP socket (7777 → 7778). */
+export function pingerPort(inst: Pick<ServerInstance, 'launch'>): number {
+  return inst.launch.port + 1;
 }
 
 export interface PortRow {
   port: number;
   label: string;
   purpose: string;
+  proto: 'UDP' | 'TCP';
   required: boolean;
 }
 
-/** Every UDP port the server binds – what to forward and allow through the firewall. */
+/** Every port to forward / allow through the firewall (Funcom's list for Conan Exiles). */
 export function serverPorts(inst: ServerInstance): PortRow[] {
   const rows: PortRow[] = [
-    { port: inst.launch.port, label: 'Game', purpose: 'Player connections and gameplay traffic', required: true },
-    { port: beaconPort(inst), label: 'Beacon', purpose: 'World-settings beacon – the in-game browser reads world info and join details through it (game port + 1111)', required: true },
+    { port: inst.launch.port, label: 'Game', purpose: 'Player connections and gameplay traffic', proto: 'UDP', required: true },
+    { port: pingerPort(inst), label: 'Pinger', purpose: 'Raw UDP socket the server always opens on game port + 1', proto: 'UDP', required: true },
+    { port: inst.launch.queryPort, label: 'Query', purpose: 'Steam server-browser queries – without it the server doesn’t show up in the list', proto: 'UDP', required: true },
   ];
-  if (inst.launch.queryPort > 0) rows.push({ port: inst.launch.queryPort, label: 'Query', purpose: 'Optional Steam query port', required: false });
+  if (inst.rcon.enabled) rows.push({ port: inst.rcon.port, label: 'RCON', proto: 'TCP', purpose: 'Remote admin. Only forward it if you use RCON tools from outside your network – the manager doesn’t need it.', required: false });
   return rows;
 }
 

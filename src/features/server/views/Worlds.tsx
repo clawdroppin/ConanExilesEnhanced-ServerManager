@@ -83,7 +83,7 @@ export function Worlds({ id }: { id: string }) {
           <Empty
             icon={<Globe2 />}
             title="No world yet"
-            description={`The first start creates a new world named “${inst.ini?.defaultWorldName ?? 'MyWorld'}”. Or import a game.db / game_0.db you made elsewhere.`}
+            description="The first start creates a new world (game_0.db). Or import a game_0.db from another server or a single-player save."
           />
         ) : (
           <div className="flex items-center gap-3 py-3">
@@ -178,7 +178,7 @@ export function Worlds({ id }: { id: string }) {
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-fg">Start over with a fresh world</div>
           <div className="mt-0.5 text-[12px] text-fg-3">
-            Moves the live world and every snapshot into quarantine (recoverable). The next start generates a new world named “{inst.ini?.defaultWorldName ?? 'MyWorld'}”.
+            Moves the live world and every snapshot into quarantine (recoverable). The next start generates a brand-new world.
           </div>
         </div>
         <Button

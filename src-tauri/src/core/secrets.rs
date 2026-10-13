@@ -90,8 +90,6 @@ pub fn seal_instance(i: &ServerInstance) -> ServerInstance {
     let mut s = i.clone();
     s.identity.admin_password = seal(&s.identity.admin_password);
     s.identity.server_password = seal(&s.identity.server_password);
-    s.ini.admin_password = seal(&s.ini.admin_password);
-    s.ini.world_password = seal(&s.ini.world_password);
     s.rcon.password = seal(&s.rcon.password);
     s.branch_password = seal(&s.branch_password);
     s
@@ -103,8 +101,6 @@ pub fn open_instance(i: &mut ServerInstance) -> Vec<String> {
     let n = i.name.clone();
     open_field(&mut i.identity.admin_password, &mut lost, &format!("{n}: admin password"));
     open_field(&mut i.identity.server_password, &mut lost, &format!("{n}: server password"));
-    open_field(&mut i.ini.admin_password, &mut lost, &format!("{n}: ini admin password"));
-    open_field(&mut i.ini.world_password, &mut lost, &format!("{n}: ini world password"));
     open_field(&mut i.rcon.password, &mut lost, &format!("{n}: RCON password"));
     open_field(&mut i.branch_password, &mut lost, &format!("{n}: branch password"));
     lost

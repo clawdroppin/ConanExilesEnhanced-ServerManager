@@ -182,7 +182,7 @@ export function Backups({ id }: { id: string }) {
       >
         <div className="space-y-3 text-[12.5px] text-fg-2">
           <p>The current world saves are backed up and moved to quarantine, then the backup's saves are put back.</p>
-          <Checkbox checked={withConfig} onChange={setWithConfig} label="Also restore config files (DedicatedServer.ini, Engine.ini …)" />
+          <Checkbox checked={withConfig} onChange={setWithConfig} label="Also restore config files (ServerSettings.ini with its game rules, Engine.ini, Game.ini, ModHttp.ini)" />
         </div>
       </Dialog>
     </div>

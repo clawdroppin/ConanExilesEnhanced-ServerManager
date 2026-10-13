@@ -33,7 +33,7 @@ export function Files({ id }: { id: string }) {
   const proj = `${inst.installDir}\\ConanSandbox`;
   const folders = [
     { label: 'Server folder', path: inst.installDir, icon: HardDrive },
-    { label: 'World saves', path: `${proj}\\Saved\\SaveGames`, icon: Archive },
+    { label: 'World database (game_0.db)', path: `${proj}\\Saved`, icon: Archive },
     { label: 'Config files', path: `${proj}\\Saved\\Config\\WindowsServer`, icon: FileCode2 },
     { label: 'Logs', path: `${proj}\\Saved\\Logs`, icon: ScrollText },
     { label: 'Backups', path: backupDir, icon: Archive },

@@ -42,7 +42,7 @@ function LaunchPreview({ id }: { id: string }) {
         </button>
       </div>
       <div className="selectable bg-bg/70 px-4 py-3 font-mono text-[11.5px] leading-relaxed break-all text-fg-2">{line || '…'}</div>
-      <div className="border-t border-line px-4 py-2 text-[11px] text-fg-4">Passwords and names never go on the command line – they’re written to DedicatedServer.ini.</div>
+      <div className="border-t border-line px-4 py-2 text-[11px] text-fg-4">Passwords and names never go on the command line – they’re written to ServerSettings.ini, Engine.ini and Game.ini.</div>
     </Card>
   );
 }

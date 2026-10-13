@@ -1,4 +1,4 @@
-import { Activity, Archive, Puzzle, CalendarClock, FileCode2, Globe2, HardDrive, LayoutDashboard, Rocket, Router, ShieldCheck, SlidersHorizontal, Terminal, Users } from 'lucide-react';
+import { Activity, Archive, Puzzle, CalendarClock, FileCode2, Globe2, HardDrive, LayoutDashboard, Rocket, Router, ScrollText, ShieldCheck, SlidersHorizontal, Terminal, Users } from 'lucide-react';
 import type { ViewId } from '@/store/app';
 
 export const VIEWS: { id: ViewId; label: string; icon: typeof Activity; group: 'Monitor' | 'World' | 'Configure' | 'Maintain' }[] = [
@@ -10,6 +10,7 @@ export const VIEWS: { id: ViewId; label: string; icon: typeof Activity; group: '
   { id: 'mods', label: 'Mods', icon: Puzzle, group: 'World' },
   { id: 'backups', label: 'Backups', icon: Archive, group: 'World' },
   { id: 'settings', label: 'Server Settings', icon: SlidersHorizontal, group: 'Configure' },
+  { id: 'rules', label: 'Game Rules', icon: ScrollText, group: 'Configure' },
   { id: 'launch', label: 'Launch & Engine', icon: Rocket, group: 'Configure' },
   { id: 'automation', label: 'Automation', icon: CalendarClock, group: 'Configure' },
   { id: 'config', label: 'Config Files', icon: FileCode2, group: 'Configure' },

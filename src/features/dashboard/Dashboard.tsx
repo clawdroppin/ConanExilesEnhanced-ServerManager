@@ -4,7 +4,7 @@ import { ArrowUpRight, Cpu, Download, Flame, MemoryStick, Network, Play, Plus, S
 import { api, errMsg } from '@/lib/ipc';
 import { bytes, pct } from '@/lib/format';
 import { serverColor } from '@/lib/colors';
-import { beaconPort } from '@/lib/net';
+import { pingerPort } from '@/lib/net';
 import { useServerHistory, useSystemHistory } from '@/lib/live';
 import type { ServerInstance } from '@/lib/types';
 import { useApp } from '@/store/app';
@@ -37,7 +37,7 @@ const ServerCard = memo(function ServerCard({ inst, i }: { inst: ServerInstance;
                 <ArrowUpRight className="size-3.5 text-fg-4 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
               <div className="mt-0.5 truncate font-mono text-[11px] text-fg-4">
-                {inst.ini?.defaultWorldName ?? '—'} · UDP {inst.launch.port} / {beaconPort(inst)}
+                {inst.identity?.serverName || '—'} · UDP {inst.launch.port}/{pingerPort(inst)} · query {inst.launch.queryPort}
               </div>
             </div>
             <StatusPill state={st?.state} busy={st?.busy} />

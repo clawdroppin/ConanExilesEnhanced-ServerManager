@@ -389,7 +389,7 @@ export function Mods({ id }: { id: string }) {
                   disabled={running}
                   className="hover:text-err"
                   onClick={async () => {
-                    const r = await confirm({ title: `Remove ${m.entry.name}?`, message: 'Its files are moved to the _quarantine folder next to SaveGames, so it can be recovered.', confirm: 'Remove', danger: true });
+                    const r = await confirm({ title: `Remove ${m.entry.name}?`, message: 'Its files are moved to Saved/_quarantine, so it can be recovered.', confirm: 'Remove', danger: true });
                     if (r.ok) removeMod(m);
                   }}
                 >

@@ -9,7 +9,8 @@ This file is the hand-off document for anyone (human or AI model) continuing wor
 A Tauri 2 desktop app (Rust backend + React 19 / TypeScript frontend) that:
 - Installs the Conan Exiles Enhanced dedicated server via SteamCMD
 - Manages server lifecycle (start, stop, restart, update, delete, clone)
-- Exposes every `DedicatedServer.ini` setting in a structured UI
+- Exposes every `ServerSettings.ini` game rule (~290 keys, Game Rules view) plus the profile-owned identity/network/RCON settings (Server Settings view)
+- Manages bans and the whitelist (`Saved/blacklist.txt`, `Saved/whitelist.txt`)
 - Manages Steam Workshop mods per server (with a shared download cache)
 - Provides live telemetry, RCON console, log tail
 - Automates: backups, scheduled restarts, crash recovery, freeze detection
@@ -37,8 +38,9 @@ A Tauri 2 desktop app (Rust backend + React 19 / TypeScript frontend) that:
 │      server.rs    – start/stop/restart/update lifecycle         │
 │      steamcmd.rs  – SteamCMD execution + progress parsing       │
 │      rcon.rs      – RCON TCP client                             │
-│      mods.rs      – Workshop mod management                     │
-│      modsync.rs   – Mod folder sync on server start             │
+│      mods.rs      – modlist.txt, pak inspection, conflicts      │
+│      modsync.rs   – Workshop metadata, update checks, downloads │
+│      access.rs    – blacklist.txt / whitelist.txt               │
 │      backup.rs    – Server backup/restore                       │
 │      supervisor.rs– Crash/freeze detection + auto-restart       │
 │      proc.rs      – Process management (kill, scan, Ctrl+Break) │
@@ -46,7 +48,7 @@ A Tauri 2 desktop app (Rust backend + React 19 / TypeScript frontend) that:
 │      secrets.rs   – DPAPI encryption for passwords/URLs         │
 │      network.rs   – Port checks, UPnP                           │
 │      history.rs   – Audit log, session tracking                 │
-│      settings.rs  – App settings persistence                    │
+│      settings.rs  – Game rules (ServerSettings.ini) + enum map  │
 │      gamedb.rs    – Game database queries                       │
 │      diagnostics.rs– Health checks                              │
 │      download.rs  – File download helper                        │
@@ -60,7 +62,7 @@ A Tauri 2 desktop app (Rust backend + React 19 / TypeScript frontend) that:
 - **`state.rs` owns all shared state** – `instances` (persisted), `runtime` (per-server live state), `rcon` (connections), `history` (audit log).
 - **INI round-trips losslessly** – `IniDoc` in `ini.rs` preserves unknown keys, comments, ordering, repeated keys, and indexed keys. Never regex-replace INI text.
 - **Secrets are DPAPI-encrypted** – `secrets.rs` `seal()`/`open()` handles RCON passwords and webhook URLs. Empty strings short-circuit (no-op).
-- **Portable vs installed** – `paths.rs` checks for `portable.txt` next to the exe. If present, all data goes to `<exe_dir>/data/`. Otherwise `%APPDATA%/ConanExilesEnhancedServerManager/`.
+- **Portable vs installed** – `paths.rs` checks for `portable.txt` next to the exe. If present, all data goes to `<exe_dir>/data/`. Otherwise `%APPDATA%\com.conanexiles.enhancedmanager\`.
 - **Events flow one way** – Rust emits Tauri events (`task`, `status`, `log`, `backup-created`, etc.); React listens via `useBackendEvents.ts`.
 
 ---
@@ -129,9 +131,9 @@ npm run build:all
 
 3. **SteamCMD progress parsing** – `steamcmd.rs` uses a regex (`PROGRESS_RE`) to parse percentage from stdout. The output format can change; the parser is defensive (ignores non-matching lines).
 
-4. **RCON is TCP** – the server must have `RCONEnabled=True` and a non-empty `RCONPassword` in `DedicatedServer.ini`. The app connects on the RCON port (default 27015+).
+4. **RCON is TCP** – `Game.ini [RconPlugin] RconEnabled=1`, `RconPassword`, `RconPort` (default **25575**), `RconMaxKarma`. Replies carry the *previous* request id, so send one command at a time; bursts trip the karma limit ("Too many commands", then the IP is denied for ~1 min). `SetServerSetting` with a number for an **enum** setting is silently ignored even though the reply says "Setting X to N" – always send the enum *name* (`settings::live_value` does this).
 
-5. **Mod sync happens on start** – `modsync.rs` copies enabled mods from the shared Workshop cache into the server's `Mods/` folder. If you change the mod list while the server is running, the changes apply on next start.
+5. **Mods are mounted in place** – `mods::write_modlist` writes absolute `.pak` paths from the shared SteamCMD Workshop cache into `ConanSandbox\Mods\modlist.txt` on every start (nothing is copied). Mod list changes while running apply on the next start.
 
 6. **DPAPI is per-user** – encrypted secrets can only be decrypted by the same Windows user on the same machine. Don't copy the data folder to another user account.
 
@@ -142,6 +144,20 @@ npm run build:all
 9. **The `background()` helper** in `commands.rs` spawns a tokio task and returns immediately. Errors become toast notifications. Use it for any command that might take >1s.
 
 10. **`write_json_atomic`** reads the existing file first (to validate it's parseable JSON) before writing the backup. This prevents corrupting good data with a bad write.
+
+---
+
+11. **There is NO `DedicatedServer.ini`, Owner ID, world name, platform policy, beacon port or `.sav` world in Conan Exiles.** Those are Dragonwilds concepts that leaked in from the sister project in 1.0.0–1.0.4 and were removed in 1.0.5. The world is `Saved/game_0.db` (SQLite WAL). Ports: game UDP, game+1 UDP, query UDP (27015), RCON TCP. Profiles from those versions may still carry `ini.ownerId` etc. in `instances.json`; serde ignores them.
+
+12. **Who owns which config value** (the root of the 1.0.4 "my setting got reset" reports):
+    * **Game rules** (`ServerSettings.ini [ServerSettings]`, everything except the keys below) – the **file is the source of truth**. The server writes it itself: `SetServerSetting` (RCON *and* the in-game admin panel) writes through immediately, and a **clean shutdown rewrites the whole file from the server's memory** (verified: an external edit made while running is reverted by `shutdown`; Ctrl+Break does not rewrite). So: never cache rules in the profile, never write the file while the server runs, and never write a *whole-file snapshot* after it stops.
+    * **Profile-owned keys** – `AdminPassword`, `ServerPassword`, `ServerMessageOfTheDay` (ServerSettings.ini), `ServerName` (Engine.ini), `ServerModList`, `[RconPlugin]`, `[Regions]`, `ServerDefaultMap`, the command line. Written by `server::sync_ini` on every start. Admins can change the MOTD/passwords in-game, so always go through **`server::sync_profile`**: it first calls `adopt_server_changes` (file ≠ last-written fingerprint *and* profile = last-written → the in-game value wins and is saved into the profile), then `mark_synced` (stores sha256 fingerprints in `ServerInstance.synced`), then `sync_ini`. Don't call bare `sync_ini` on a stored profile.
+    * **Raw editor saves while running** (`write_config`) are stored as key-level `IniChange`s (`IniDoc::diff` against the text the editor loaded) and merged with `IniDoc::apply_changes` after the server exits (`apply_pending`). A save while stopped also merges when the file changed since the editor loaded it.
+    * A **brand-new** ServerSettings.ini gets `ConfigVersion=13` / `BlueprintConfigVersion=25`; without them the server "upgrades from version 2" on first start and resets dozens of rules (seen in a real log).
+
+13. **Game Rules catalog is generated** – `src/data/gameRules.ts` comes from `scripts/gen-game-rules.py` (labels, groups, descriptions, enum options) + `docs/research/enhanced-settings-facts.json` (verified keys/defaults). Edit the script, then run `python scripts/gen-game-rules.py`. Enum index order must match `core/settings.rs ENUMS`.
+
+14. **Bans/whitelist** – `Saved/blacklist.txt` / `Saved/whitelist.txt`, lines `<id>[:<name>]` (CRLF). `whitelistplayer <id>` appends `<id>:Unknown`. RCON `banplayer (index|name|userid|platformid|player) <id> <msg>` only accepts players the server has seen, so offline bans are written to the file while the server is stopped (`core/access.rs`). Whitelisting is enforced only with `EnableWhitelist=True`.
 
 ---
 

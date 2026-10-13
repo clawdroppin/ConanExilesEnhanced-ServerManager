@@ -10,5 +10,5 @@ export function useSearchName(id: string): string {
   const st = useStatus(id);
   const live = st?.state === 'running' || st?.state === 'starting';
   if (live && st?.session?.SlotName) return st.session.SlotName;
-  return inst?.identity?.serverName || inst?.ini?.serverName || inst?.ini?.defaultWorldName || '';
+  return inst?.identity?.serverName || '';
 }

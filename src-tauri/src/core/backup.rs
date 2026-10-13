@@ -24,7 +24,7 @@ use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 
 const MANIFEST: &str = "backup.json";
-const CONFIG_FILES: &[&str] = &["ServerSettings.ini", "DedicatedServer.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
+const CONFIG_FILES: &[&str] = &["ServerSettings.ini", "Engine.ini", "Game.ini", "ModHttp.ini"];
 
 fn opts() -> SimpleFileOptions {
     SimpleFileOptions::default()
@@ -451,14 +451,6 @@ fn strip_secrets(file: &str, text: &str) -> String {
         "Game.ini" => {
             if doc.get("RconPlugin", "RconPassword").is_some() {
                 doc.set("RconPlugin", "RconPassword", "");
-            }
-        }
-        "DedicatedServer.ini" => {
-            let section = "/Script/Dominion.DedicatedServerSettings";
-            for k in ["Owner", "Whitelist", "Blacklist", "AdminList"] {
-                if doc.get(section, k).is_some() {
-                    doc.set(section, k, "");
-                }
             }
         }
         _ => {}

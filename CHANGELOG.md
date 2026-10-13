@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] – 2026-10-13
+
+### Fixed
+- **In-game admin changes are no longer overwritten on launch.** The manager rewrote the message of the day and passwords from its profile on every start, wiping values changed in-game as admin (e.g. the MOTD). It now detects in-game changes and keeps them, saving them into the profile (`server::sync_profile`).
+- **Config Files saves made while the server was running** used to be written back as a whole-file snapshot after it stopped, silently reverting anything changed in-game in the meantime (drop-loot-on-death, rates…). They are now merged key-by-key; saves while stopped merge too if the file changed since it was opened.
+- **Config Files "Save" always showed an error** even though the file was saved (the frontend expected a field the backend never returned).
+- **Live enum settings were silently ignored**: values like drop-on-death or server region were sent to RCON as numbers, which the server ignores even though it replies "Setting … to …". They are now sent by name.
+- **First start of a new server reset rules**: a freshly created ServerSettings.ini lacked `ConfigVersion`, so the server ran its settings upgrade and reset many rules, including preset values. New files now get the current versions.
+- **Server Settings fields did nothing**: server name, join password and admin password edited fields that were only written to a `DedicatedServer.ini` Conan never reads. They now edit the real values.
+- Removed the remaining Dragonwilds leftovers: Owner ID, world name, platform policy, beacon port (+1111), the `DedicatedServer.ini` file in the editor, backups and packs, and the claim that PvP/difficulty "aren't server config".
+- **Port forwarding / firewall texts** now list Conan's real ports: game UDP, game + 1 UDP, query UDP (27015) and optional RCON TCP.
+- **Players**: the ban, admin and known-player lists were always empty (wrong file and list names).
+
+### Added
+- **Game Rules view**: every `ServerSettings.ini` rule (≈290, including undocumented ones found in the binary) with search, groups, a "changed from default" filter, dependency hints, reset to default, quick presets (Relaxed PvE, Weekend raids, Small group boost) and an editor for unknown/mod keys. Changes apply live over RCON while the server runs, otherwise they are saved to the file. Admin changes made in-game show up there.
+- **Players view rebuilt**: online players with warn/kick/ban, every character in the world with search and ban/whitelist buttons, ban list (`Saved/blacklist.txt`) and whitelist (`Saved/whitelist.txt`) with add/remove (RCON while running, file while stopped), an "Enforce whitelist" toggle and a moderation log.
+- **Server Settings**: RCON section (enable, port, password, karma limit, player-list refresh), "Skip map regions" (Exiled Lands / Isle of Siptah), HTTP bind IP (`-MULTIHOMEHTTP`), query port, and "Free ports" now also picks a free query port.
+- **New server wizard**: choose PvE/PvP and what players drop on death (keep everything / backpack / everything) up front.
+
 ## [1.0.4] – 2026-10-11
 
 ### Added

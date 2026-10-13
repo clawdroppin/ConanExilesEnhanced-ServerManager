@@ -54,7 +54,7 @@ export function dirtyViews(saved: ServerInstance | undefined, draft: ServerInsta
   if (!saved || !draft || same(saved, draft)) return out;
   const a = saved.launch;
   const b = draft.launch;
-  if (!same(saved.ini, draft.ini) || saved.name !== draft.name || saved.color !== draft.color || saved.notes !== draft.notes || a.port !== b.port || a.queryPort !== b.queryPort || a.maxPlayers !== b.maxPlayers || a.multihome !== b.multihome || a.beaconPort !== b.beaconPort)
+  if (!same(saved.ini, draft.ini) || saved.name !== draft.name || saved.color !== draft.color || saved.notes !== draft.notes || a.port !== b.port || a.queryPort !== b.queryPort || a.maxPlayers !== b.maxPlayers || a.multihome !== b.multihome || a.multihomeHttp !== b.multihomeHttp || !same(saved.identity, draft.identity) || !same(saved.rcon, draft.rcon) || !same(saved.regions, draft.regions))
     out.add('settings');
   if (!same(a.options, b.options) || a.extraArgs !== b.extraArgs || a.priority !== b.priority || !same(a.affinity, b.affinity) || a.showConsole !== b.showConsole) out.add('launch');
   if (!same(saved.automation, draft.automation)) out.add('automation');

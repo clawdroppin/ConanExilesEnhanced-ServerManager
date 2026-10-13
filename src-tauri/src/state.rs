@@ -41,9 +41,11 @@ pub struct Runtime {
     pub log_offset: u64,
     pub log_partial: String,
     pub last_log_at: i64,
-    /// Raw config files saved while the server was running (file name -> text); written once it
-    /// exits because the server rewrites ServerSettings.ini itself.
-    pub pending_configs: HashMap<String, String>,
+    /// Raw-editor saves made while the server was running (file name -> key-level changes). The
+    /// server rewrites ServerSettings.ini from memory on a clean shutdown, so these are merged
+    /// into the file once it has exited – key by key, so in-game admin changes made meanwhile
+    /// survive (a whole-file copy would silently revert them).
+    pub pending_configs: HashMap<String, Vec<crate::core::ini::IniChange>>,
     /// Game-rule changes that couldn't be applied live (no RCON) – key -> value.
     pub pending_settings: BTreeMap<String, String>,
     /// Players currently online (RCON listplayers).

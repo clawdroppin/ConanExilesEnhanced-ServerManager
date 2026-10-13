@@ -158,7 +158,7 @@ export function PortForwarding({ id }: { id: string }) {
     <div className="mx-auto max-w-[1000px] space-y-5 p-6 pb-24">
       <PageHeader
         title="Port Forwarding"
-        description="Players outside your home network can only join if your router passes these UDP ports to this PC. Friends on the same Wi-Fi don’t need it."
+        description="Players outside your home network can only join if your router passes these ports to this PC. Friends on the same Wi-Fi don’t need it."
         actions={
           <Button size="sm" icon={busy ? <Loader2 className="size-3.5 animate-spin" /> : <Wifi className="size-3.5" />} onClick={load}>
             Re-check
@@ -166,7 +166,7 @@ export function PortForwarding({ id }: { id: string }) {
         }
       />
 
-      <Section title="What to forward" icon={<Globe2 />} description="Both ports are required. They are the defaults Funcom’s own server image uses; a second server on this PC uses the next pair (7778 + 8889, …)." bodyClassName="py-2">
+      <Section title="What to forward" icon={<Globe2 />} description="Game, game + 1 and query are required (Funcom’s defaults are 7777, 7778 and 27015). A second server on this PC needs its own set, e.g. 7779/7780 and 27016." bodyClassName="py-2">
         <table className="w-full text-left text-[12.5px]">
           <thead className="text-[11px] tracking-wide text-fg-4 uppercase">
             <tr>
@@ -189,7 +189,7 @@ export function PortForwarding({ id }: { id: string }) {
                     <div className="text-[11.5px] text-fg-4">{p.purpose}</div>
                   </td>
                   <td className="py-3">
-                    <Badge tone="info">UDP</Badge>
+                    <Badge tone="info">{p.proto}</Badge>
                   </td>
                   <td className="py-3">
                     <CopyCell value={String(p.port)} />
@@ -220,7 +220,7 @@ export function PortForwarding({ id }: { id: string }) {
           </tbody>
         </table>
         <div className="border-t border-line py-2.5 text-[11.5px] text-fg-4">
-          Use the same number for external and internal port – Funcom notes they must match. TCP is not needed.
+          Use the same number for external and internal port – Funcom notes they must match. UDP 14001 (server list registration) is outgoing only and needs no rule.
         </div>
       </Section>
 
@@ -325,7 +325,7 @@ export function PortForwarding({ id }: { id: string }) {
                       <td className="px-3 py-1.5">
                         <CopyCell value={`Conan Exiles ${p.label}`} />
                       </td>
-                      <td className="px-3 py-1.5 font-mono">UDP</td>
+                      <td className="px-3 py-1.5 font-mono">{p.proto}</td>
                       <td className="px-3 py-1.5">
                         <CopyCell value={String(p.port)} />
                       </td>
@@ -365,7 +365,7 @@ export function PortForwarding({ id }: { id: string }) {
           )}
         </Step>
         <Step n={5} title="Test it">
-          Start the server, then ask a friend on a <b className="text-fg">different</b> network to open Worlds → Public and search <b className="font-mono text-fg">{searchName}</b> – or use the Direct IP tab with your public address and port {inst.launch.port}. Listed but can’t join? The beacon/game port isn’t reaching this PC – re-check the rules above.
+          Start the server, then ask a friend on a <b className="text-fg">different</b> network to open Worlds → Public and search <b className="font-mono text-fg">{searchName}</b> – or use the Direct IP tab with your public address and port {inst.launch.port}. Not listed? The query port isn’t reaching this PC. Listed but can’t join? The game ports aren’t – re-check the rules above.
           <div className="mt-2 flex items-center gap-1.5 text-[11.5px] text-fg-4">
             <AlertTriangle className="size-3.5" /> Testing from your own PC through your public address often fails even when forwarding works (many routers don’t support “NAT loopback”).
           </div>
@@ -373,7 +373,7 @@ export function PortForwarding({ id }: { id: string }) {
       </Section>
 
       <Card className="flex items-center justify-between gap-4 p-4 text-[12.5px] text-fg-3">
-        Changing ports? The beacon follows the game port automatically (+1111). Set both under Server Settings → Network.
+        Changing ports? Game port + 1 follows automatically. Set the game and query ports under Server Settings → Network, then update these rules.
         <Button size="sm" onClick={() => setView(id, 'settings')}>
           Server Settings
         </Button>

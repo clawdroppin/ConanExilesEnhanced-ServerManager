@@ -45,6 +45,31 @@ pub fn read(inst: &ServerInstance) -> AppResult<GameRules> {
     })
 }
 
+/// Enum settings: the file stores the index, `SetServerSetting` only accepts the name. A number
+/// (or any unknown word) is silently ignored by the server even though it replies
+/// "Setting X to N" – verified on 3.0.1 with DropEquipmentOnDeath and serverRegion. Index order
+/// comes from the shipping binary's enum tables (docs/research/enhanced-settings-facts.json).
+pub const ENUMS: &[(&str, &[&str])] = &[
+    ("DropEquipmentOnDeath", &["DropNothing", "DropEverything", "DropBackpack"]),
+    ("MaxNudity", &["No", "Partial", "Full"]),
+    ("ShowOnlinePlayers", &["ShowAll", "ShowClan", "ShowNobody"]),
+    ("EventLogPvECauserPrivacy", &["AllCanSee", "OwnersCanSee", "AdminsCanSee", "NoneCanSee"]),
+    ("EventLogPvPCauserPrivacy", &["AllCanSee", "OwnersCanSee", "AdminsCanSee", "NoneCanSee"]),
+    ("serverVoiceChat", &["Disabled", "Enabled"]),
+    ("ServerVoiceChat", &["Disabled", "Enabled"]),
+    ("CombatModeModifier", &["None", "Fast", "Mayhem"]),
+    ("BuildingReplicationDistance", &["Normal", "Far", "Cinematic"]),
+    ("CreativeModeServer", &["AdminOnly", "Everyone", "ForceForEveryone"]),
+    ("serverRegion", &["EU", "America", "Asia", "Oceania", "SouthAmerica", "Japan", "All"]),
+];
+
+/// The name `SetServerSetting` needs for an enum stored as a number in the file.
+pub fn live_value(key: &str, value: &str) -> Option<String> {
+    let (_, names) = ENUMS.iter().find(|(k, _)| k.eq_ignore_ascii_case(key))?;
+    let i: usize = value.trim().parse().ok()?;
+    names.get(i).map(|s| s.to_string())
+}
+
 fn check_value(key: &str, value: &str) -> AppResult<()> {
     if key.trim().is_empty() || key.contains(['=', '[', ']', '\r', '\n', ' ']) {
         return Err(AppError::msg(format!("“{key}” isn't a valid setting name.")));
@@ -126,7 +151,7 @@ pub async fn apply(
             // Stay well under the RCON rate limit on big preset applies.
             tokio::time::sleep(std::time::Duration::from_millis(250)).await;
         }
-        let sent = live_values.get(k).unwrap_or(v);
+        let sent = live_values.get(k).cloned().or_else(|| live_value(k, v)).unwrap_or_else(|| v.clone());
         // RCON arguments are space separated; the value is the remainder of the line.
         match state.rcon_exec(inst, &format!("SetServerSetting {k} {sent}")).await {
             Ok(reply) if reply.to_lowercase().starts_with("setting") => res.live.push(k.clone()),
@@ -174,6 +199,9 @@ mod tests {
         remove_file_values(&inst, &["HarvestAmountMultiplier".into()]).unwrap();
         assert!(!read(&inst).unwrap().values.contains_key("HarvestAmountMultiplier"));
         assert!(is_protected("adminpassword"));
+        assert_eq!(live_value("DropEquipmentOnDeath", "0").as_deref(), Some("DropNothing"));
+        assert_eq!(live_value("serverregion", "1").as_deref(), Some("America"));
+        assert_eq!(live_value("HarvestAmountMultiplier", "2"), None);
         let _ = std::fs::remove_dir_all(dir);
     }
 }

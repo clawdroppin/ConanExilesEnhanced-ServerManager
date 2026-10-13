@@ -193,7 +193,7 @@ pub fn run() {
             commands::set_player_note,
             commands::moderation_log,
             commands::player_lists,
-            commands::remove_list_entry,
+            commands::edit_player_list,
             commands::list_worlds,
             commands::restore_world,
             commands::export_world,

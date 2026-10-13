@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Globe2, Info, Loader2, RefreshCw, Router, 
 import { cn } from '@/lib/cn';
 import { api, errMsg } from '@/lib/ipc';
 import { copy } from '@/lib/shell';
-import { beaconPort, netInfo } from '@/lib/net';
+import { netInfo, pingerPort } from '@/lib/net';
 import type { DiagCheck, FirewallState, NetInfo } from '@/lib/types';
 import { useApp, useInstance, type ViewId } from '@/store/app';
 import { useServerActions } from '@/hooks/useServerActions';
@@ -164,7 +164,7 @@ export function Health({ id }: { id: string }) {
             )}
           </div>
           {fw && fw.blockedBy.length > 0 && <div className="text-[11.5px] text-err">Block rule “{fw.blockedBy[0]}” stops players from connecting – the button below removes it.</div>}
-          <div className="text-[11.5px] text-fg-4">Adds inbound UDP {inst.launch.port} + {beaconPort(inst)}{inst.launch.queryPort ? ` + ${inst.launch.queryPort}` : ''} and a program rule. Windows asks for administrator permission once.</div>
+          <div className="text-[11.5px] text-fg-4">Adds inbound UDP {inst.launch.port} + {pingerPort(inst)} + {inst.launch.queryPort} and a program rule. Windows asks for administrator permission once.</div>
         </Section>
         <Section title="Addresses" icon={<Globe2 />} bodyClassName="py-4 space-y-2">
           <div className="flex items-center justify-between text-[12.5px]">
@@ -189,7 +189,7 @@ export function Health({ id }: { id: string }) {
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-fg">Port forwarding</div>
           <div className="mt-0.5 text-[12.5px] text-fg-3">
-            Forward UDP <span className="font-mono text-fg">{inst.launch.port}</span> and <span className="font-mono text-fg">{beaconPort(inst)}</span> to this PC – automatically over UPnP or step by step.
+            Forward UDP <span className="font-mono text-fg">{inst.launch.port}</span>, <span className="font-mono text-fg">{pingerPort(inst)}</span> and <span className="font-mono text-fg">{inst.launch.queryPort}</span> to this PC – automatically over UPnP or step by step.
           </div>
         </div>
         <Button size="sm" variant="primary" onClick={() => setView(id, 'ports')}>

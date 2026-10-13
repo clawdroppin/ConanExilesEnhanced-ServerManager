@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 import { ago, bytes, dateTime, duration, pct, until } from '@/lib/format';
 import { lineLevel, useLogLines, useServerHistory } from '@/lib/live';
 import { copy } from '@/lib/shell';
-import { beaconPort, netInfo } from '@/lib/net';
+import { netInfo, pingerPort } from '@/lib/net';
 import type { NetInfo, ServerStats } from '@/lib/types';
 import { useApp, useInstance, useStatus } from '@/store/app';
 import { Sparkline } from '@/components/charts/Charts';
@@ -61,13 +61,12 @@ export function Overview({ id }: { id: string }) {
   const last = hist[hist.length - 1];
   const live = st?.state === 'running' || st?.state === 'starting';
   const state = st?.state ?? 'stopped';
-  const missing = !inst.ini?.serverName || !inst.ini?.defaultWorldName || !inst.ini?.adminPassword;
+  const missing = !inst.identity?.serverName?.trim() || !inst.identity?.adminPassword;
   const memLimit = (info?.totalMemory ?? 0) || 1;
 
   const checklist = [
     { done: state !== 'notInstalled', label: 'Install the dedicated server files', go: 'files' as const },
-    { done: !missing, label: 'Set server name, world name and admin password', go: 'settings' as const },
-    { done: !!inst.ini?.ownerId, label: 'Add your Owner ID (Player ID from the in-game Settings menu)', go: 'settings' as const },
+    { done: !missing, label: 'Set a server name and admin password', go: 'settings' as const },
     { done: fwOk !== false, label: 'Allow the server through Windows Firewall', go: 'health' as const },
     { done: live, label: 'Start the server', go: null },
   ];
@@ -122,8 +121,8 @@ export function Overview({ id }: { id: string }) {
       <Card className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-[13px] font-semibold text-fg">How players join</div>
-          <Badge tone={inst.ini?.worldPassword ? 'warn' : 'ok'}>
-            <KeyRound /> {inst.ini?.worldPassword ? 'Password protected' : 'Open to everyone'}
+          <Badge tone={inst.identity?.serverPassword ? 'warn' : 'ok'}>
+            <KeyRound /> {inst.identity?.serverPassword ? 'Password protected' : 'Open to everyone'}
           </Badge>
         </div>
         <div className="flex gap-3">
@@ -133,7 +132,7 @@ export function Overview({ id }: { id: string }) {
           <CopyChip label="LAN IP" value={net?.local[0] ? `${inst.launch.multihome || net.local[0].ip}:${inst.launch.port}` : '—'} icon={<Network />} />
         </div>
         <div className="mt-3 text-[11.5px] text-fg-4">
-          In-game: Worlds → Public → search the world name, use the Direct IP tab{st?.session?.JoinCode ? ', or enter the invite code' : ''}. Friends outside your network need UDP {inst.launch.port} + {beaconPort(inst)} forwarded on your router –{' '}
+          In-game: Play Online → search the server name in the server browser, or use Direct Connect with the IP above. Friends outside your network need UDP {inst.launch.port}, {pingerPort(inst)} and {inst.launch.queryPort} forwarded on your router –{' '}
           <button className="text-accent hover:underline" onClick={() => setView(id, 'ports')}>
             port forwarding guide
           </button>

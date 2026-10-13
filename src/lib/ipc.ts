@@ -102,7 +102,8 @@ export const api = {
     invoke<T.ApplyResult>('apply_game_rules', { id, changes, liveValues, restartKeys }),
   resetGameRules: (id: string, keys: string[]) => invoke<void>('reset_game_rules', { id, keys }),
   readConfig: (id: string, file: T.ConfigFileName) => invoke<T.ConfigFile>('read_config', { id, file }),
-  writeConfig: (id: string, file: T.ConfigFileName, text: string) => invoke<{ deferred: boolean; instance: T.ServerInstance }>('write_config', { id, file, text }),
+  /** `base` = the text the editor loaded; the backend merges key-by-key when the file changed since. */
+  writeConfig: (id: string, file: T.ConfigFileName, text: string, base?: string) => invoke<{ deferred: boolean }>('write_config', { id, file, text, base }),
   configHistory: (id: string, file: T.ConfigFileName) => invoke<[string, number][]>('list_config_history', { id, file }),
   readTextFile: (id: string, path: string) => invoke<string>('read_text_file', { id, path }),
 
@@ -113,7 +114,8 @@ export const api = {
 
   // players / world
   playerLists: (id: string) => invoke<T.ListEntry[]>('player_lists', { id }),
-  removeListEntry: (id: string, list: string, raw: string) => invoke<void>('remove_list_entry', { id, list, raw }),
+  editPlayerList: (id: string, list: 'ban' | 'whitelist', add: boolean, playerId: string, name = '', reason = '') =>
+    invoke<string>('edit_player_list', { id, list, add, playerId, name, reason }),
   playerHistory: (id: string) => invoke<T.PlayerSummary[]>('player_history', { id }),
   serverStats: (id: string) => invoke<T.ServerStats | null>('server_stats', { id }),
   listWorlds: (id: string) => invoke<T.WorldSnapshot[]>('list_worlds', { id }),
